@@ -25,6 +25,8 @@ class UpdateTagRequest extends FormRequest
             'tag_name' => 'required',
             'short_description' => 'nullable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'posts' => 'nullable|array',
+            'posts.*' => 'exists:posts,id',
         ];
     }
 }

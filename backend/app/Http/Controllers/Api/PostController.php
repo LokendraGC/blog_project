@@ -26,13 +26,20 @@ class PostController extends Controller
      */
     public function index()
     {
-        $payload = Post::get();
+        try {
+            $posts = Post::with(['user', 'tags'])->get();
 
-        return $this->response->successMessage(
-            ['data' => $payload],
-            message: 'Posts retrieved successfully',
-            code: 200
-        );
+            return $this->response->successMessage(
+                ['data' => $posts],
+                message: 'Posts retrieved successfully',
+                code: 200
+            );
+        } catch (\Exception $err) {
+            return $this->response->errorMessage(
+                message: 'Error retrieving posts' . $err->getMessage(),
+                code: 501
+            );
+        }
     }
 
     /**
@@ -42,13 +49,19 @@ class PostController extends Controller
     {
         try {
             $data = $request->validated();
+
             $data['user_id'] = Auth::id();
 
             if ($request->hasFile('feature_image')) {
                 $data['feature_image'] = $request->file('feature_image')->store("post_images/{$data['user_id']}", 'public');
             }
 
-            Post::create($data);
+            $post = Post::create($data);
+
+            if (isset($data['tags']) && is_array($data['tags'])) {
+                $post->tags()->attach($data['tags']);
+            }
+
             return $this->response->successMessage(
                 [
                     'data' => $data
@@ -69,43 +82,73 @@ class PostController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try {
+
+
+            $post = Post::with(['user', 'tags'])->find($id);
+
+            if (!$post) {
+                return $this->response->errorMessage(
+                    message: 'Post not found',
+                    code: 404
+                );
+            }
+
+            return $this->response->successMessage(
+                ['data' => $post],
+                message: 'Post retrieved successfully',
+                code: 200
+            );
+        } catch (\Exception $err) {
+            return $this->response->successMessage(
+                message: 'Error retrieving post' . $err->getMessage(),
+                code: 501
+            );
+        }
     }
 
     /**
      * Update the specified resource in storage.
      */
-public function update(PostUpdate $request, Post $post)
-{
-    $payload = $request->validated();
+    public function update(PostUpdate $request, Post $post)
+    {
+        $payload = $request->validated();
 
-    try {
-        // Handle file upload if exists
-        if ($request->hasFile('feature_image')) {
-            // Delete old image
-            if ($post->feature_image && Storage::disk('public')->exists($post->feature_image)) {
-                Storage::disk('public')->delete($post->feature_image);
+        try {
+            // Handle file upload if exists
+            if ($request->hasFile('feature_image')) {
+                // Delete old image
+                if ($post->feature_image && Storage::disk('public')->exists($post->feature_image)) {
+                    Storage::disk('public')->delete($post->feature_image);
+                }
+
+                // Store new image
+                $payload['feature_image'] = $request->file('feature_image')
+                    ->store("post_images/{$post->user_id}", 'public');
             }
 
-            // Store new image
-            $payload['feature_image'] = $request->file('feature_image')
-                ->store("post_images/{$post->user_id}", 'public');
+            // Extract tags from payload
+            $tags = $payload['tags'] ?? [];
+            unset($payload['tags']);
+
+            $post->update($payload);
+
+            if (!empty($tags) && is_array($tags)) {
+                $post->tags()->sync($tags);
+            }
+
+            return $this->response->successMessage(
+                ['data' => $post],
+                message: 'Post updated successfully',
+                code: 200
+            );
+        } catch (\Exception $err) {
+            return $this->response->errorMessage(
+                message: 'Post cannot be updated: ' . $err->getMessage(),
+                code: 500
+            );
         }
-
-        $post->update($payload);
-
-        return $this->response->successMessage(
-            ['data' => $post],
-            message: 'Post updated successfully',
-            code: 200
-        );
-    } catch (\Exception $err) {
-        return $this->response->errorMessage(
-            message: 'Post cannot be updated: ' . $err->getMessage(),
-            code: 500
-        );
     }
-}
 
     /**
      * Remove the specified resource from storage.

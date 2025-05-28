@@ -22,7 +22,10 @@ Route::prefix('auth')->group(function () {
         Route::post('change-Fpassword', [AuthController::class, 'changePassword']);
 
         // post
-        Route::apiResource('post', PostController::class);
-        Route::apiResource('tag', TagController::class);
+        Route::apiResource('post', PostController::class)->except(['index', 'show']);
+        Route::apiResource('tag', TagController::class)->except(['index', 'show']);
     });
+
+    Route::apiResource('post', PostController::class)->only(['index', 'show']);
+    Route::apiResource('tag', TagController::class)->only(['index', 'show']);
 });

@@ -25,8 +25,9 @@ class PostUpdate extends FormRequest
             'title' => 'required|string|max:255',
             'short_description' => 'required|string',
             'content' => 'required|string',
-            'tag_id' => 'required|integer|exists:tags,id',
             'feature_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:tags,id',
         ];
     }
 }

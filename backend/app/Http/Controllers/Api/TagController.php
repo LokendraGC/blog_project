@@ -26,13 +26,20 @@ class TagController extends Controller
 
     public function index()
     {
-        $payload = Tag::get();
+        try {
+            $posts = Tag::with(['user','posts'])->get();
 
-        return $this->response->successMessage(
-            ['data' => $payload],
-            message: 'Tags retrieved successfully',
-            code: 200
-        );
+            return $this->response->successMessage(
+                ['data' => $posts],
+                message: 'Tags retrieved successfully',
+                code: 200
+            );
+        } catch (\Exception $err) {
+            return $this->response->errorMessage(
+                message: 'Error retrieving tags' . $err->getMessage(),
+                code: 501
+            );
+        }
     }
 
     /**
@@ -61,7 +68,27 @@ class TagController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try {
+            $tag = Tag::with(['user', 'posts'])->find($id);
+
+            if (!$tag) {
+                return $this->response->errorMessage(
+                    message: 'Tag not found',
+                    code: 404
+                );
+            }
+
+            return $this->response->successMessage(
+                ['data' => $tag],
+                message: 'Tag retrieved successfully',
+                code: 200
+            );
+        } catch (\Exception $err) {
+            return $this->response->successMessage(
+                message: 'Error retrieving tag' . $err->getMessage(),
+                code: 501
+            );
+        }
     }
 
     /**
