@@ -77,12 +77,19 @@ class AuthController extends Controller
             );
         }
 
+        // Eager load saved posts
+        $user->load('savedPosts');
+
         return $this->response->successMessage(
-            data: ['user' => $user],
+            data: [
+                'user' => $user,
+                'saved_posts' => $user->savedPosts
+            ],
             message: 'User profile retrieved successfully.',
             code: 200
         );
     }
+
 
     public function logout()
     {

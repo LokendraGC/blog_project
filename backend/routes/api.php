@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\TagController;
 use Illuminate\Http\Request;
@@ -21,11 +22,17 @@ Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('change-Fpassword', [AuthController::class, 'changePassword']);
 
-        // post
+        // post, comment and tag
         Route::apiResource('post', PostController::class)->except(['index', 'show']);
+        Route::apiResource('comment', CommentController::class)->except(['index', 'show']);
         Route::apiResource('tag', TagController::class)->except(['index', 'show']);
+
+
+        Route::post('/posts/{post}/save', [PostController::class, 'savePost']);
+        Route::delete('/posts/{post}/unsave', [PostController::class, 'unsavePost']);
     });
 
     Route::apiResource('post', PostController::class)->only(['index', 'show']);
+    Route::apiResource('comment', CommentController::class)->only(['index', 'show']);
     Route::apiResource('tag', TagController::class)->only(['index', 'show']);
 });

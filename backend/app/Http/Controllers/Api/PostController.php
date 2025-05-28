@@ -182,4 +182,45 @@ class PostController extends Controller
             );
         }
     }
+
+    public function savePost($postId)
+    {
+        try {
+            $post = Post::find($postId);
+
+            if (!$post) {
+                return response()->json(['message' => 'Post not found.'], 404);
+            }
+
+            $user = Auth::user();
+            $user->savedPosts()->attach($postId);
+
+            return response()->json(['message' => 'Post saved']);
+        } catch (\Exception $err) {
+            return response()->json([
+                'message' => "Error while saving post: " . $err->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function unsavePost($postId)
+    {
+        try {
+            $post = Post::find($postId);
+
+            if (!$post) {
+                return response()->json(['message' => 'Post not found.'], 404);
+            }
+
+            $user = Auth::user();
+            $user->savedPosts()->detach($post->id);
+
+            return response()->json(['message' => 'Post unsaved successfully.']);
+        } catch (\Exception $err) {
+            return response()->json([
+                'message' => 'Error while unsaving post: ' . $err->getMessage()
+            ], 500);
+        }
+    }
 }
