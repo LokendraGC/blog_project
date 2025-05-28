@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PostUpdate;
 use App\Http\Requests\StorePostRequest;
 use App\Models\Post;
 use App\Services\ResponseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -16,7 +18,7 @@ class PostController extends Controller
 
     public function __construct(ResponseService $response)
     {
-            $this->response;
+        $this->response = $response;
     }
 
     /**
@@ -24,7 +26,13 @@ class PostController extends Controller
      */
     public function index()
     {
-        //
+        $payload = Post::get();
+
+        return $this->response->successMessage(
+            ['data' => $payload],
+            message: 'Posts retrieved successfully',
+            code: 200
+        );
     }
 
     /**
@@ -32,22 +40,28 @@ class PostController extends Controller
      */
     public function store(StorePostRequest $request)
     {
-        $data = $request->validated();
-        $data['user_id'] = Auth::id();
+        try {
+            $data = $request->validated();
+            $data['user_id'] = Auth::id();
 
+            if ($request->hasFile('feature_image')) {
+                $data['feature_image'] = $request->file('feature_image')->store("post_images/{$data['user_id']}", 'public');
+            }
 
-        if (isset($data['feature_image'])) {
-            $data['feature_image'] =  $data['feature_image']->store('post_images', 'public');
+            Post::create($data);
+            return $this->response->successMessage(
+                [
+                    'data' => $data
+                ],
+                message: 'Post Created Successfully',
+                code: 200
+            );
+        } catch (\Exception $err) {
+            return $this->response->errorMessage(
+                message: 'Post cannot be created: ' . $err->getMessage(),
+                code: 500
+            );
         }
-
-        Post::create($data);
-        return $this->response->successMessage(
-            [
-                'data' => $data
-            ],
-            status: 'success',
-            code: 200
-        );
     }
 
     /**
@@ -61,16 +75,68 @@ class PostController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-        //
+public function update(PostUpdate $request, Post $post)
+{
+    $payload = $request->validated();
+
+    try {
+        // Handle file upload if exists
+        if ($request->hasFile('feature_image')) {
+            // Delete old image
+            if ($post->feature_image && Storage::disk('public')->exists($post->feature_image)) {
+                Storage::disk('public')->delete($post->feature_image);
+            }
+
+            // Store new image
+            $payload['feature_image'] = $request->file('feature_image')
+                ->store("post_images/{$post->user_id}", 'public');
+        }
+
+        $post->update($payload);
+
+        return $this->response->successMessage(
+            ['data' => $post],
+            message: 'Post updated successfully',
+            code: 200
+        );
+    } catch (\Exception $err) {
+        return $this->response->errorMessage(
+            message: 'Post cannot be updated: ' . $err->getMessage(),
+            code: 500
+        );
     }
+}
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Post $post)
     {
-        //
+        try {
+            $user = Auth::user();
+
+            if ($user->id != $post->user_id) {
+                return $this->response->errorMessage(
+                    message: 'You cannot delete this post',
+                    code: 501
+                );
+            }
+
+            if ($post->feature_image && Storage::disk('public')->exists($post->feature_image)) {
+                Storage::disk('public')->delete($post->feature_image);
+            }
+
+            $post->delete();
+
+            return $this->response->successMessage(
+                message: 'Post deleted successfully',
+                code: 201
+            );
+        } catch (\Exception $err) {
+            return $this->response->errorMessage(
+                message: "Error while deleting post " . $err->getMessage(),
+                code: 500
+            );
+        }
     }
 }

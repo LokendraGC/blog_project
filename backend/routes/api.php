@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\TagController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,7 @@ Route::prefix('auth')->group(function () {
         Route::post('change-Fpassword', [AuthController::class, 'changePassword']);
 
         // post
-        Route::resource('post', PostController::class);
+        Route::apiResource('post', PostController::class);
+        Route::apiResource('tag', TagController::class);
     });
 });

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tag extends Model
 {
-    protected $fillable = ['tag_name', 'short_description', 'image'];
+    protected $fillable = ['tag_name', 'short_description', 'image','user_id'];
 
 
     public function posts(): HasMany
