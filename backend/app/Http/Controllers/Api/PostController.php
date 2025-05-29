@@ -193,7 +193,9 @@ class PostController extends Controller
             }
 
             $user = Auth::user();
-            $user->savedPosts()->attach($postId);
+
+            // This will attach if not already saved, and ignore if already saved
+            $user->savedPosts()->syncWithoutDetaching([$postId]);
 
             return response()->json(['message' => 'Post saved']);
         } catch (\Exception $err) {
@@ -202,6 +204,7 @@ class PostController extends Controller
             ], 500);
         }
     }
+
 
 
     public function unsavePost($postId)
@@ -222,5 +225,21 @@ class PostController extends Controller
                 'message' => 'Error while unsaving post: ' . $err->getMessage()
             ], 500);
         }
+    }
+
+    public function like(Post $post)
+    {
+        $user = Auth::user();
+        $user->likedPosts()->syncWithoutDetaching([$post->id]);
+
+        return response()->json(['message' => 'Post liked']);
+    }
+
+    public function unlike(Post $post)
+    {
+        $user = Auth::user();
+        $user->likedPosts()->detach($post->id);
+
+        return response()->json(['message' => 'Post unliked']);
     }
 }

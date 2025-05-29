@@ -26,13 +26,20 @@ Route::prefix('auth')->group(function () {
         Route::apiResource('post', PostController::class)->except(['index', 'show']);
         Route::apiResource('comment', CommentController::class)->except(['index', 'show']);
         Route::apiResource('tag', TagController::class)->except(['index', 'show']);
-
-
-        Route::post('/posts/{post}/save', [PostController::class, 'savePost']);
-        Route::delete('/posts/{post}/unsave', [PostController::class, 'unsavePost']);
     });
 
     Route::apiResource('post', PostController::class)->only(['index', 'show']);
     Route::apiResource('comment', CommentController::class)->only(['index', 'show']);
     Route::apiResource('tag', TagController::class)->only(['index', 'show']);
+});
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    // like post
+    Route::post('/post/{post}/like', [PostController::class, 'like']);
+    Route::delete('/post/{post}/unlike', [PostController::class, 'unlike']);
+
+    // save post
+    Route::post('/posts/{post}/save', [PostController::class, 'savePost']);
+    Route::delete('/posts/{post}/unsave', [PostController::class, 'unsavePost']);
 });
