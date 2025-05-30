@@ -5,6 +5,7 @@ import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from "next-themes";
+import Auth from '@/app/auth/page'
 
 
 const Navbar = () => {
@@ -43,9 +44,8 @@ const Navbar = () => {
                     <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                     <span className="sr-only">Toggle theme</span>
                 </Button>
-                <Button className="rounded-full cursor-pointer mr-[10px] text-white hover:bg-gray-800 dark:bg-blue-500 dark:hover:bg-blue-600">
-                    Sign in
-                </Button>
+                <Auth />
+
             </div>
         </nav>
 

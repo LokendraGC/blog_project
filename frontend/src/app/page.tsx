@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 export default function Home() {
   return (
     <>
-      <Navbar />
+     <h1>Hello There</h1>
     </>
   );
 }
