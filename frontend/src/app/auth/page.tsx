@@ -11,13 +11,27 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
-
+import { myAppHook } from "@/context/AppProvider"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { LogOut, Settings, User } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface formData {
     name?: string;
+    username?: string;
     email: string;
     password: string;
     password_confirmation?: string;
@@ -33,7 +47,17 @@ const Auth: React.FC = () => {
         email: "",
         password: "",
         password_confirmation: "",
+        username: ""
     });
+
+    const router = useRouter();
+    const { login, register, authToken, isLoading, logout } = myAppHook()
+
+    useEffect(() => {
+        if (authToken) {
+            router.push('/');
+        }
+    }, [authToken, isLoading])
 
     const handleChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -42,21 +66,67 @@ const Auth: React.FC = () => {
         })
     }
 
-    const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         if (isLogin) {
-            alert('login form submitted');
+
+            try {
+                await login(formData.email, formData.password);
+            } catch (Error) {
+                console.log('Authentication error', Error);
+            }
+
         } else {
-            alert('register form submitted');
+
+            try {
+                await register(formData.username ?? '', formData.name ?? '', formData.email, formData.password, formData.password_confirmation ?? '');
+
+            } catch (Error) {
+                console.log('Authentication error', Error);
+            }
         }
     }
 
     return (
         <Dialog>
-            <DialogTrigger asChild>
-                <Button className="cursor-pointer">Sign in</Button>
-            </DialogTrigger>
+
+
+            {
+                authToken ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger className="cursor-pointer">
+                            <Avatar>
+                                <AvatarImage src="https://plus.unsplash.com/premium_photo-1689530775582-83b8abdb5020?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cmFuZG9tJTIwcGVyc29ufGVufDB8fDB8fHww" />
+                                <AvatarFallback>CN</AvatarFallback>
+                            </Avatar>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent sideOffset={10}>
+                            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="cursor-pointer">
+                                <User className="mr-3 h-[10px] w-[22px]" />
+                                Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer">
+                                <Settings className="mr-3 h-[10px] w-[22px]" />
+                                Setting
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={logout}>
+                                <LogOut className="mr-3 h-[10px] w-[22px]" />
+                                Lgout
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                ) : (
+
+                    <DialogTrigger asChild>
+                        <Button className="cursor-pointer">Sign in</Button>
+                    </DialogTrigger>
+                )
+            }
+
 
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleFormSubmit}>
