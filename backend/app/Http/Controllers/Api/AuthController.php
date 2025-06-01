@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Services\ResponseService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Laravolt\Avatar\Avatar;
 
 class AuthController extends Controller
 {
@@ -22,26 +24,30 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
-        $payload =  $request->validated();
+        $payload = $request->validated();
 
         try {
-
             $payload['password'] = Hash::make($payload['password']);
             $user = User::create($payload);
 
+            // Optional: handl  e uploaded avatar (if your form supports it)
+            $uploaded = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = basename($uploaded);
+            $user->save();
+
             return $this->response->successMessage(
-                data: ['user' => $user,],
+                data: ['user' => $user],
                 message: 'User registered successfully.',
                 code: 201
             );
         } catch (\Exception $e) {
-
             return $this->response->errorMessage(
                 message: 'Registration failed: ' . $e->getMessage(),
                 code: 500
             );
         }
     }
+
 
     public function login(LoginRequest $request)
     {
@@ -66,7 +72,8 @@ class AuthController extends Controller
         );
     }
 
-    public function profile()
+
+    public function profile(Avatar $avatarGenerator) // Inject the service
     {
         $user = Auth::user();
 
@@ -77,13 +84,16 @@ class AuthController extends Controller
             );
         }
 
-        // Eager load saved posts
         $user->load('savedPosts');
+
+        // Use the injected instance
+        $avatarUrl = $user->avatar ?? $avatarGenerator->create($user->name)->toBase64();
 
         return $this->response->successMessage(
             data: [
                 'user' => $user,
-                'saved_posts' => $user->savedPosts
+                'saved_posts' => $user->savedPosts,
+                'avatar' => $avatarUrl
             ],
             message: 'User profile retrieved successfully.',
             code: 200

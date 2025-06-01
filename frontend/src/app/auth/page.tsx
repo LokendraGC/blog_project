@@ -28,36 +28,88 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { LogOut, Settings, User } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import axios from "axios"
+import toast from "react-hot-toast"
 
 interface formData {
     name?: string;
-    username?: string;
     email: string;
     password: string;
     password_confirmation?: string;
+}
+
+interface UserProfile {
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        avatar?: string;
+    };
+    avatar?: string;
 }
 
 
 
 const Auth: React.FC = () => {
 
+    const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
     const [isLogin, setIsLogin] = useState<boolean>(true);
     const [formData, setFormData] = useState<formData>({
         name: "",
         email: "",
         password: "",
         password_confirmation: "",
-        username: ""
     });
+
+
+    const [avatar, setAvatar] = useState<string | null>(null);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
     const router = useRouter();
     const { login, register, authToken, isLoading, logout } = myAppHook()
 
     useEffect(() => {
-        if (authToken) {
-            router.push('/');
-        }
-    }, [authToken, isLoading])
+        const fetchProfile = async () => {
+            if (!authToken) return;
+
+            try {
+                // 1. Ensure CSRF cookie is set
+                await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
+                    withCredentials: true,
+                });
+
+                // 2. Make authenticated request with token
+                const response = await axios.get(`${APP_URL}/api/auth/profile`, {
+                    withCredentials: true,
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                // console.log(response.data.data.user.name);
+                setUserProfile(response.data.data);
+                setAvatar(response.data.avatar || response.data.user?.avatar || null);
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+
+                    console.error('Profile fetch error:', {
+                        status: error.response?.status,
+                        data: error.response?.data,
+                        headers: error.response?.headers
+                    });
+                }
+            }
+        };
+
+        // Add small delay to ensure CSRF cookie is set
+        const timer = setTimeout(() => {
+            fetchProfile();
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, [authToken, APP_URL]);
+
 
     const handleChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -80,7 +132,7 @@ const Auth: React.FC = () => {
         } else {
 
             try {
-                await register(formData.username ?? '', formData.name ?? '', formData.email, formData.password, formData.password_confirmation ?? '');
+                await register(formData.name ?? '', formData.email, formData.password, formData.password_confirmation ?? '');
 
             } catch (Error) {
                 console.log('Authentication error', Error);
@@ -91,14 +143,20 @@ const Auth: React.FC = () => {
     return (
         <Dialog>
 
-
             {
                 authToken ? (
                     <DropdownMenu>
                         <DropdownMenuTrigger className="cursor-pointer">
                             <Avatar>
-                                <AvatarImage src="https://plus.unsplash.com/premium_photo-1689530775582-83b8abdb5020?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cmFuZG9tJTIwcGVyc29ufGVufDB8fDB8fHww" />
-                                <AvatarFallback>CN</AvatarFallback>
+                                <AvatarImage
+                                    src={avatar || `https://ui-avatars.com/api/?name=${userProfile?.user.name || 'User'}&background=random`}
+                                    alt={userProfile?.user.name || 'User'}
+                                />
+                                <AvatarFallback>
+                                    {userProfile?.user.name
+                                        ? userProfile.user.name
+                                        : ''}
+                                </AvatarFallback>
                             </Avatar>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent sideOffset={10}>
@@ -114,100 +172,100 @@ const Auth: React.FC = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={logout}>
                                 <LogOut className="mr-3 h-[10px] w-[22px]" />
-                                Lgout
+                                LogOut
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
 
                 ) : (
 
-                    <DialogTrigger asChild>
-                        <Button className="cursor-pointer">Sign in</Button>
-                    </DialogTrigger>
-                )
-            }
+                    <>
+                        <DialogTrigger asChild>
+                            <Button className="cursor-pointer">Sign in</Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                            <form onSubmit={handleFormSubmit}>
+                                <DialogHeader className="my-5">
+                                    <DialogTitle>{isLogin ? 'Sign In' : 'Register'}</DialogTitle>
+                                    <DialogDescription>
+                                        {isLogin ? 'Sign in to get started' : 'Register to get started'}
+                                    </DialogDescription>
+                                </DialogHeader>
 
+                                <div className="grid gap-4">
+                                    {!isLogin && (
+                                        <div className="grid gap-3">
+                                            <Label htmlFor="name">Name</Label>
+                                            <Input
+                                                id="name"
+                                                type="text"
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleChangeInput}
+                                            />
+                                        </div>
+                                    )}
 
-            <DialogContent className="sm:max-w-[425px]">
-                <form onSubmit={handleFormSubmit}>
-                    <DialogHeader className="my-5">
-                        <DialogTitle>{isLogin ? 'Sign In' : 'Register'}</DialogTitle>
-                        <DialogDescription>
-                            {isLogin ? 'Sign in to get started' : 'Register to get started'}
-                        </DialogDescription>
-                    </DialogHeader>
+                                    <div className="grid gap-3">
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleChangeInput}
+                                        />
+                                    </div>
+                                    <div className="grid gap-3">
+                                        <Label htmlFor="password">Password</Label>
+                                        <Input
+                                            id="password"
+                                            type="password"
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleChangeInput}
+                                        />
+                                    </div>
 
-                    <div className="grid gap-4">
-                        {!isLogin && (
-                            <div className="grid gap-3">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChangeInput}
-                                />
-                            </div>
-                        )}
+                                    {!isLogin && (
+                                        <div className="grid gap-3">
+                                            <Label htmlFor="password_confirmation">Confirm Password</Label>
+                                            <Input
+                                                id="password_confirmation"
+                                                type="password"
+                                                name="password_confirmation"
+                                                value={formData.password_confirmation}
+                                                onChange={handleChangeInput}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
 
-                        <div className="grid gap-3">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChangeInput}
-                            />
-                        </div>
-                        <div className="grid gap-3">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChangeInput}
-                            />
-                        </div>
+                                <DialogDescription className="my-5">
+                                    {isLogin ? 'Already have an account?' : "Don't have an account?"}{' '}
+                                    <span
+                                        onClick={() => setIsLogin(!isLogin)}
+                                        className="cursor-pointer text-blue-600 hover:underline"
+                                    >
+                                        {isLogin ? 'Register' : 'Sign In'}
+                                    </span>
+                                </DialogDescription>
 
-                        {!isLogin && (
-                            <div className="grid gap-3">
-                                <Label htmlFor="password_confirmation">Confirm Password</Label>
-                                <Input
-                                    id="password_confirmation"
-                                    type="password"
-                                    name="password_confirmation"
-                                    value={formData.password_confirmation}
-                                    onChange={handleChangeInput}
-                                />
-                            </div>
-                        )}
-                    </div>
+                                <DialogFooter>
+                                    <DialogClose asChild>
+                                        <Button className="cursor-pointer" type="button" variant="outline">
+                                            Cancel
+                                        </Button>
+                                    </DialogClose>
+                                    <Button className="cursor-pointer" type="submit">
+                                        {isLogin ? 'Sign In' : 'Create Account'}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </>
+                )}
 
-                    <DialogDescription className="my-5">
-                        {isLogin ? 'Already have an account?' : "Don't have an account?"}{' '}
-                        <span
-                            onClick={() => setIsLogin(!isLogin)}
-                            className="cursor-pointer text-blue-600 hover:underline"
-                        >
-                            {isLogin ? 'Register' : 'Sign In'}
-                        </span>
-                    </DialogDescription>
-
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button className="cursor-pointer" type="button" variant="outline">
-                                Cancel
-                            </Button>
-                        </DialogClose>
-                        <Button className="cursor-pointer" type="submit">
-                            {isLogin ? 'Sign In' : 'Create Account'}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
         </Dialog>
 
     )

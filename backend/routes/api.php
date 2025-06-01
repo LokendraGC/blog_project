@@ -21,6 +21,8 @@
             Route::get('profile', [AuthController::class, 'profile']);
             Route::post('logout', [AuthController::class, 'logout']);
             Route::post('change-Fpassword', [AuthController::class, 'changePassword']);
+            Route::post('get-avatar', [AuthController::class, 'getAvatar']);
+
 
             // post, comment and tag
             Route::apiResource('post', PostController::class)->except(['index', 'show']);
