@@ -6,6 +6,7 @@ import { Button } from '../ui/button'
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from "next-themes";
 import Auth from '@/app/auth/page'
+import Link from 'next/link'
 
 
 const Navbar = () => {
@@ -19,7 +20,11 @@ const Navbar = () => {
     return (
         <nav className="flex justify-between items-center p-4 sticky bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
-                <span className="font-bold text-2xl text-gray-900 dark:text-white">ShareThoughts</span>
+                <span className="font-bold text-2xl text-gray-900 dark:text-white">
+                    <Link href="/">
+                        ShareThoughts
+                    </Link>
+                </span>
 
                 <div className="relative ml-8">
                     <span className="absolute inset-y-0 left-3 flex items-center text-gray-500 dark:text-gray-400">

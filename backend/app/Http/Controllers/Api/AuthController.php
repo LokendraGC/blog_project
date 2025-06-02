@@ -73,32 +73,32 @@ class AuthController extends Controller
     }
 
 
-    public function profile(Avatar $avatarGenerator) // Inject the service
-    {
-        $user = Auth::user();
+        public function profile(Avatar $avatarGenerator) // Inject the service
+        {
+            $user = Auth::user();
 
-        if (!$user) {
-            return $this->response->errorMessage(
-                message: 'Unauthorized.',
-                code: 401
+            if (!$user) {
+                return $this->response->errorMessage(
+                    message: 'Unauthorized.',
+                    code: 401
+                );
+            }
+
+            $user->load('savedPosts');
+
+            // Use the injected instance
+            $avatarUrl = $user->avatar ?? $avatarGenerator->create($user->name)->toBase64();
+
+            return $this->response->successMessage(
+                data: [
+                    'user' => $user,
+                    'saved_posts' => $user->savedPosts,
+                    'avatar' => $avatarUrl
+                ],
+                message: 'User profile retrieved successfully.',
+                code: 200
             );
         }
-
-        $user->load('savedPosts');
-
-        // Use the injected instance
-        $avatarUrl = $user->avatar ?? $avatarGenerator->create($user->name)->toBase64();
-
-        return $this->response->successMessage(
-            data: [
-                'user' => $user,
-                'saved_posts' => $user->savedPosts,
-                'avatar' => $avatarUrl
-            ],
-            message: 'User profile retrieved successfully.',
-            code: 200
-        );
-    }
 
 
     public function logout()

@@ -30,6 +30,7 @@ import { LogOut, Settings, User } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import axios from "axios"
 import toast from "react-hot-toast"
+import Link from "next/link"
 
 interface formData {
     name?: string;
@@ -162,14 +163,20 @@ const Auth: React.FC = () => {
                         <DropdownMenuContent sideOffset={10}>
                             <DropdownMenuLabel>My Account</DropdownMenuLabel>
                             <DropdownMenuSeparator />
+                            
+                            <Link href="/profile">
+                                <DropdownMenuItem asChild>
+                                    <div className="flex items-center cursor-pointer">
+                                        <Settings className="mr-3 h-[10px] w-[22px]" />
+                                        Profile
+                                    </div>
+                                </DropdownMenuItem>
+                            </Link>
                             <DropdownMenuItem className="cursor-pointer">
                                 <User className="mr-3 h-[10px] w-[22px]" />
-                                Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer">
-                                <Settings className="mr-3 h-[10px] w-[22px]" />
                                 Setting
                             </DropdownMenuItem>
+
                             <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={logout}>
                                 <LogOut className="mr-3 h-[10px] w-[22px]" />
                                 LogOut

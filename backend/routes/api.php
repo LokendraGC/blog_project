@@ -20,7 +20,7 @@
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('profile', [AuthController::class, 'profile']);
             Route::post('logout', [AuthController::class, 'logout']);
-            Route::post('change-Fpassword', [AuthController::class, 'changePassword']);
+            Route::post('change-password', [AuthController::class, 'changePassword']);
             Route::post('get-avatar', [AuthController::class, 'getAvatar']);
 
 

@@ -12,6 +12,7 @@ interface AppProviderType {
     authToken: string | null,
     login: (email: string, password: string) => Promise<void>,
     register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>
+    changePassword: (current_password: string, new_password: string, new_password_confirmation: string) => Promise<void>
 }
 
 
@@ -45,7 +46,7 @@ export default function AppProvider({
 
     axios.defaults.withCredentials = true;
 
-    // In your AppProvider component
+    // for login
     const login = async (email: string, password: string) => {
         setIsLoading(true);
         try {
@@ -73,27 +74,50 @@ export default function AppProvider({
                 toast.error('Invalid Credentials');
             }
         } catch (error: unknown) {
-            // ... existing error handling
+            console.log('Unknown error', error);
+            toast.error('Invalid Credentials');
+
         } finally {
             setIsLoading(false);
         }
     };
 
-    const logout = async () => {  // Make this async
+
+    const logout = async () => {
         try {
+            // Refresh CSRF
+            await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
+                withCredentials: true
+            });
+
+            // Logout API
             await axios.post(`${APP_URL}/api/auth/logout`, {}, {
                 withCredentials: true
             });
-        } catch (error) {
-            console.error('Logout error:', error);
+
+            toast.success('Logged out successfully');
+            router.push('/');
+        } catch (error: any) {
+            if (error.response?.status === 401) {
+                // Ignore – user is already unauthenticated
+                console.warn('User already logged out.');
+            } else {
+                console.error('Logout error:', error.response?.data || error.message);
+                toast.error('Logout failed.');
+            }
         } finally {
+            // Clear local auth state
+            toast.success('Logged out successfully');
             setAuthToken(null);
             Cookies.remove('authToken');
             Cookies.remove('user');
-            toast.success('Logged out successfully');
         }
     };
 
+
+
+
+    // for register
     const register = async (
         name: string,
         email: string,
@@ -128,16 +152,54 @@ export default function AppProvider({
         }
     };
 
+    // for change password
+    const changePassword = async (
+        current_password: string,
+        new_password: string,
+        new_password_confirmation: string
+    ) => {
+        setIsLoading(true);
 
-    // const logout = () => {
-    //     setAuthToken(null);
-    //     Cookies.remove('authToken');
-    //     setIsLoading(false);
-    //     toast.success('logged out successfully')
-    // }
+        try {
+            // Ensure CSRF token is set (required for Sanctum)
+            await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
+                withCredentials: true,
+            });
+
+            // Call change-password endpoint
+            const response = await axios.post(
+                `${APP_URL}/api/auth/change-password`,
+                {
+                    current_password,
+                    new_password,
+                    new_password_confirmation,
+                },
+                {
+                    withCredentials: true, // MUST be true for Sanctum
+                }
+            );
+
+            const url =  `${APP_URL}/api/auth/change-password`;
+
+            console.log(url);
+            
+            toast.success("Password Changed Successfully");
+            console.log(response.data);
+        } catch (error: any) {
+            toast.error(
+                error?.response?.data?.error ||
+                "Something went wrong while changing the password"
+            );
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
 
     return (
-        <AppContext.Provider value={{ login, logout, register, isLoading, authToken }}>
+        <AppContext.Provider value={{ login, logout, register, isLoading, authToken, changePassword }}>
             {isLoading ? <Loader /> : children}
         </AppContext.Provider>
     );
