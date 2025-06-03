@@ -65,20 +65,15 @@ const ChangePassword = () => {
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    {
-      if (formData.new_password !== formData.new_password_confirmation) {
-        toast.error("New password and confirmation do not match");
-        return;
-      }
+    if (formData.new_password !== formData.new_password_confirmation) {
+      toast.error("New password and confirmation do not match");
+      return;
+    }
+
 
       // Additional validation
       if (!formData.current_password || !formData.new_password || !formData.new_password_confirmation) {
         toast.error('Please fill all fields')
-        return
-      }
-
-      if (formData.new_password !== formData.new_password_confirmation) {
-        toast.error("New password and confirmation do not match")
         return
       }
 
@@ -88,30 +83,27 @@ const ChangePassword = () => {
       }
 
 
+    try {
+      setIsSubmitting(true);
+      await changePassword(
+        formData.current_password,
+        formData.new_password,
+        formData.new_password_confirmation
+      );
 
-      try {
-        setIsSubmitting(true)
-        await changePassword(
-          formData.current_password,
-          formData.new_password,
-          formData.new_password_confirmation
-        )
-        // Clear form on success
-        setFormData({
-          current_password: '',
-          new_password: '',
-          new_password_confirmation: '',
-        })
-        toast.success('Password changed successfully!')
+      // Clear form on success
+      setFormData({
+        current_password: '',
+        new_password: '',
+        new_password_confirmation: '',
+      });
 
-      } catch (error) {
-        console.log('Error on change password', error);
-      } finally {
-        setIsSubmitting(false)
-      }
+    } catch (error) {
+      console.error('Password change error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-  }
+  };
 
 
   // profile
@@ -174,10 +166,10 @@ const ChangePassword = () => {
           height={100}
           className="rounded-full border shadow-md"
         />
-        <h2 className="text-xl font-semibold mt-4">{ userProfile?.user.name }</h2>
-        <p className="text-muted-foreground text-sm">Full Stack Developer</p>
+        <h2 className="text-xl font-semibold mt-4">{userProfile?.user.name}</h2>
+        {/* <p className="text-muted-foreground text-sm">Full Stack Developer</p> */}
         <Separator className="my-4" />
-        <Button variant="outline" className="w-full">Edit Profile</Button>
+        <Button variant="outline" className="w-full cursor-pointer">Edit Profile</Button>
       </Card>
 
       {/* Main Content */}
@@ -186,16 +178,13 @@ const ChangePassword = () => {
         <CardContent className="space-y-4">
           <div>
             <Label className="text-muted-foreground">Email</Label>
-            <p className="font-medium">gclokendra10@gmail.com</p>
+            <p className="font-medium">{ userProfile?.user.email }</p>
           </div>
           <div>
-            <Label className="text-muted-foreground">Phone</Label>
-            <p className="font-medium">+977 98XXXXXXXX</p>
+            <Label className="text-muted-foreground">Username</Label>
+            <p className="font-medium">{ userProfile?.user.name }</p>
           </div>
-          <div>
-            <Label className="text-muted-foreground">Location</Label>
-            <p className="font-medium">Surkhet, Nepal</p>
-          </div>
+         
 
           <Separator className="my-4" />
 

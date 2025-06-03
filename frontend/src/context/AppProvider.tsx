@@ -161,12 +161,12 @@ export default function AppProvider({
         setIsLoading(true);
 
         try {
-            // Ensure CSRF token is set (required for Sanctum)
+            // 1. Get CSRF cookie first
             await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
                 withCredentials: true,
             });
 
-            // Call change-password endpoint
+            // 2. Make the password change request with auth token
             const response = await axios.post(
                 `${APP_URL}/api/auth/change-password`,
                 {
@@ -175,27 +175,29 @@ export default function AppProvider({
                     new_password_confirmation,
                 },
                 {
-                    withCredentials: true, // MUST be true for Sanctum
+                    withCredentials: true,
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
                 }
             );
 
-            const url =  `${APP_URL}/api/auth/change-password`;
-
-            console.log(url);
-            
             toast.success("Password Changed Successfully");
-            console.log(response.data);
+            return response.data;
         } catch (error: any) {
+            console.error('Password change error:', error.response?.data || error.message);
             toast.error(
                 error?.response?.data?.error ||
-                "Something went wrong while changing the password"
+                error?.response?.data?.message ||
+                "Failed to change password"
             );
             throw error;
         } finally {
             setIsLoading(false);
         }
     };
-
 
 
     return (
