@@ -6,7 +6,19 @@ import toast from "react-hot-toast";
 import Cookies from 'js-cookie';
 import { useRouter } from "next/navigation";
 
+
+interface User {
+    user: {
+        id: number
+        name: string
+        email: string
+        avatar?: string
+    }
+    avatar?: string
+}
+
 interface AppProviderType {
+    user: User | null,
     logout: () => void,
     isLoading: boolean,
     authToken: string | null,
@@ -31,6 +43,11 @@ export default function AppProvider({
     const [isLoading, setIsLoading] = useState<boolean>(true)
     const [authToken, setAuthToken] = useState<string | null>(null)
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+    const [user, setUser] = useState<User | null>(null)
+
+
+
+
 
     useEffect(() => {
         const token = Cookies.get('authToken');
@@ -43,6 +60,38 @@ export default function AppProvider({
         setIsLoading(false)
 
     }, [])
+
+    // profile
+    useEffect(() => {
+        const checkAuth = async () => {
+            const token = Cookies.get('authToken')
+            if (!token) {
+                setIsLoading(false)
+                return
+            }
+
+            try {
+                // Verify token with backend
+                const response = await axios.get(`${APP_URL}/api/auth/profile`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    withCredentials: true
+                })
+
+                setUser(response.data.data)
+                // console.log(response.data.data);
+                // setAuthToken(true)
+            } catch (error) {
+                console.error('Auth check failed:', error)
+                Cookies.remove('authToken')
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        checkAuth()
+    }, [])
+
+
 
     axios.defaults.withCredentials = true;
 
@@ -83,6 +132,7 @@ export default function AppProvider({
     };
 
 
+    // logout
     const logout = async () => {
         try {
             // Refresh CSRF
@@ -113,8 +163,6 @@ export default function AppProvider({
             Cookies.remove('user');
         }
     };
-
-
 
 
     // for register
@@ -187,13 +235,12 @@ export default function AppProvider({
             toast.success("Password Changed Successfully");
             return response.data;
         } catch (error: any) {
-            console.error('Password change error:', error.response?.data || error.message);
+            // console.error('Password change error:', error.response?.data || error.message);
             toast.error(
                 error?.response?.data?.error ||
                 error?.response?.data?.message ||
                 "Failed to change password"
             );
-            throw error;
         } finally {
             setIsLoading(false);
         }
@@ -201,7 +248,7 @@ export default function AppProvider({
 
 
     return (
-        <AppContext.Provider value={{ login, logout, register, isLoading, authToken, changePassword }}>
+        <AppContext.Provider value={{ user, login, logout, register, isLoading, authToken, changePassword }}>
             {isLoading ? <Loader /> : children}
         </AppContext.Provider>
     );

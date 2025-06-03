@@ -22,6 +22,7 @@
             Route::post('logout', [AuthController::class, 'logout']);
             Route::post('change-password', [AuthController::class, 'changePassword']);
             Route::post('get-avatar', [AuthController::class, 'getAvatar']);
+            Route::post('update-profile', [AuthController::class, 'updateProfile']);
 
 
             // post, comment and tag

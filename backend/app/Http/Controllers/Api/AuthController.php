@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePassword;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\UpdateProfile;
 use App\Models\User;
 use App\Services\ResponseService;
 use Illuminate\Support\Facades\Auth;
@@ -73,32 +74,32 @@ class AuthController extends Controller
     }
 
 
-        public function profile(Avatar $avatarGenerator) // Inject the service
-        {
-            $user = Auth::user();
+    public function profile(Avatar $avatarGenerator) // Inject the service
+    {
+        $user = Auth::user();
 
-            if (!$user) {
-                return $this->response->errorMessage(
-                    message: 'Unauthorized.',
-                    code: 401
-                );
-            }
-
-            $user->load('savedPosts');
-
-            // Use the injected instance
-            $avatarUrl = $user->avatar ?? $avatarGenerator->create($user->name)->toBase64();
-
-            return $this->response->successMessage(
-                data: [
-                    'user' => $user,
-                    'saved_posts' => $user->savedPosts,
-                    'avatar' => $avatarUrl
-                ],
-                message: 'User profile retrieved successfully.',
-                code: 200
+        if (!$user) {
+            return $this->response->errorMessage(
+                message: 'Unauthorized.',
+                code: 401
             );
         }
+
+        $user->load('savedPosts');
+
+        // Use the injected instance
+        $avatarUrl = $user->avatar ?? $avatarGenerator->create($user->name)->toBase64();
+
+        return $this->response->successMessage(
+            data: [
+                'user' => $user,
+                'saved_posts' => $user->savedPosts,
+                'avatar' => $avatarUrl
+            ],
+            message: 'User profile retrieved successfully.',
+            code: 200
+        );
+    }
 
 
     public function logout()
@@ -147,6 +148,55 @@ class AuthController extends Controller
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),
             ], 500);
+        }
+    }
+
+    public function updateProfile(UpdateProfile $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return $this->response->errorMessage(
+                message: 'Unauthorized.',
+                code: 401
+            );
+        }
+
+        try {
+            $data = $request->validated();
+
+            // Handle avatar upload if present
+            if ($request->hasFile('avatar')) {
+                // Delete old avatar if exists
+                if ($user->avatar) {
+                    Storage::delete('public/avatars/' . basename($user->avatar));
+                }
+
+                // Store new avatar
+                // $avatarPath = $request->file('avatar')->store('public/avatars');
+                // $data['avatar'] = Storage::url($avatarPath);
+
+                $uploaded = $request->file('avatar')->store('avatars', 'public');
+                $data['avatar'] = basename($uploaded);
+
+            }
+
+            // Update user data
+            $user->update($data);
+
+            return $this->response->successMessage(
+                data: [
+                    'user' => $user,
+                    'avatar' => $user->avatar
+                ],
+                message: 'Profile updated successfully.',
+                code: 200
+            );
+        } catch (\Exception $e) {
+            return $this->response->errorMessage(
+                message: 'Failed to update profile: ' . $e->getMessage(),
+                code: 500
+            );
         }
     }
 }

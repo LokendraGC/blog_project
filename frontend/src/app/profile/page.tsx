@@ -13,6 +13,7 @@ import { myAppHook } from "@/context/AppProvider"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation";
 import axios from "axios"
+import Link from "next/link"
 
 
 interface formData {
@@ -26,6 +27,7 @@ interface UserProfile {
     id: number;
     name: string;
     email: string;
+    username?: string;
     avatar?: string;
   };
   avatar?: string;
@@ -71,16 +73,16 @@ const ChangePassword = () => {
     }
 
 
-      // Additional validation
-      if (!formData.current_password || !formData.new_password || !formData.new_password_confirmation) {
-        toast.error('Please fill all fields')
-        return
-      }
+    // Additional validation
+    if (!formData.current_password || !formData.new_password || !formData.new_password_confirmation) {
+      toast.error('Please fill all fields')
+      return
+    }
 
-      if (formData.new_password.length < 8) {
-        toast.error("Password must be at least 8 characters")
-        return
-      }
+    if (formData.new_password.length < 8) {
+      toast.error("Password must be at least 8 characters")
+      return
+    }
 
 
     try {
@@ -107,8 +109,6 @@ const ChangePassword = () => {
 
 
   // profile
-
-
   useEffect(() => {
     const fetchProfile = async () => {
       if (!authToken) return;
@@ -132,7 +132,6 @@ const ChangePassword = () => {
         setUserProfile(response.data.data);
         setAvatar(response.data.avatar || response.data.user?.avatar || null);
 
-        console.log(response.data.data);
 
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -155,21 +154,30 @@ const ChangePassword = () => {
   }, [authToken, APP_URL]);
 
 
+  const getAvatarUrl = (avatarPath: string | null | undefined) => {
+    if (!avatarPath) return '/default-avatar.png';
+    return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${avatarPath}`;
+  };
+
   return (
     <div className="flex min-h-screen bg-muted/50 p-6 gap-6">
       {/* Sidebar */}
       <Card className="w-80 p-6 flex flex-col items-center text-center">
         <Image
-          src={'/avatar'}
+          src={getAvatarUrl(userProfile?.avatar)}
           alt="Profile Image"
           width={100}
           height={100}
           className="rounded-full border shadow-md"
+          // Optional: Add a loader if you need custom URL construction
+          loader={({ src }) => src}
         />
         <h2 className="text-xl font-semibold mt-4">{userProfile?.user.name}</h2>
         {/* <p className="text-muted-foreground text-sm">Full Stack Developer</p> */}
         <Separator className="my-4" />
-        <Button variant="outline" className="w-full cursor-pointer">Edit Profile</Button>
+        <Link href={'profile/edit-profile'}>
+          <Button variant="outline" className="w-full cursor-pointer">Edit Profile</Button>
+        </Link>
       </Card>
 
       {/* Main Content */}
@@ -177,14 +185,18 @@ const ChangePassword = () => {
         <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
         <CardContent className="space-y-4">
           <div>
+            <Label className="text-muted-foreground">Name</Label>
+            <p className="font-medium">{userProfile?.user.name}</p>
+          </div>
+          <div>
             <Label className="text-muted-foreground">Email</Label>
-            <p className="font-medium">{ userProfile?.user.email }</p>
+            <p className="font-medium">{userProfile?.user.email}</p>
           </div>
           <div>
             <Label className="text-muted-foreground">Username</Label>
-            <p className="font-medium">{ userProfile?.user.name }</p>
+            <p className="font-medium">{userProfile?.user.username}</p>
           </div>
-         
+
 
           <Separator className="my-4" />
 
