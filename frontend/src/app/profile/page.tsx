@@ -154,22 +154,34 @@ const ChangePassword = () => {
   }, [authToken, APP_URL]);
 
 
+  // const getAvatarUrl = (avatarPath: string | null | undefined) => {
+  //   if (!avatarPath) return '/default-avatar.png';
+  //   return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${avatarPath}`;
+  // };
+
   const getAvatarUrl = (avatarPath: string | null | undefined) => {
-    if (!avatarPath) return '/default-avatar.png';
+    if (!avatarPath) return null;
+
+    // Handle base64 encoded avatars (from avatar generator)
+    if (avatarPath.startsWith('data:image')) {
+      return avatarPath;
+    }
+
+    // Handle uploaded avatars (stored in storage)
     return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${avatarPath}`;
   };
+
 
   return (
     <div className="flex min-h-screen bg-muted/50 p-6 gap-6">
       {/* Sidebar */}
       <Card className="w-80 p-6 flex flex-col items-center text-center">
         <Image
-          src={getAvatarUrl(userProfile?.avatar)}
+          src={getAvatarUrl(userProfile?.avatar) || `https://ui-avatars.com/api/?name=${userProfile?.user.name || 'User'}&background=random`}
           alt="Profile Image"
           width={100}
           height={100}
           className="rounded-full border shadow-md"
-          // Optional: Add a loader if you need custom URL construction
           loader={({ src }) => src}
         />
         <h2 className="text-xl font-semibold mt-4">{userProfile?.user.name}</h2>

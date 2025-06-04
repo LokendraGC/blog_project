@@ -160,7 +160,14 @@ const Navbar: React.FC = () => {
 
 
     const getAvatarUrl = (avatarPath: string | null | undefined) => {
-        if (!avatarPath) return '/default-avatar.png';
+        if (!avatarPath) return null;
+
+        // Handle base64 encoded avatars (from avatar generator)
+        if (avatarPath.startsWith('data:image')) {
+            return avatarPath;
+        }
+
+        // Handle uploaded avatars (stored in storage)
         return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${avatarPath}`;
     };
 
@@ -211,24 +218,21 @@ const Navbar: React.FC = () => {
                                     {
                                         user?.avatar ? (
                                             <Image
-                                                src={getAvatarUrl(user?.avatar)}
+                                                src={getAvatarUrl(user.avatar) || `https://ui-avatars.com/api/?name=${userProfile?.user.name || 'User'}&background=random`}
                                                 alt="Profile Image"
                                                 width={40}
                                                 height={40}
                                                 className="rounded-full border shadow-md"
-                                                // Optional: Add a loader if you need custom URL construction
                                                 loader={({ src }) => src}
                                             />
                                         ) : (
                                             <Avatar>
                                                 <AvatarImage
-                                                    src={avatar || `https://ui-avatars.com/api/?name=${userProfile?.user.name || 'User'}&background=random`}
+                                                    src={`https://ui-avatars.com/api/?name=${userProfile?.user.name || 'User'}&background=random`}
                                                     alt={userProfile?.user.name || 'User'}
                                                 />
                                                 <AvatarFallback>
-                                                    {userProfile?.user.name
-                                                        ? userProfile.user.name
-                                                        : ''}
+                                                    {userProfile?.user.name ? userProfile?.user.name.charAt(0).toUpperCase() : 'U'}
                                                 </AvatarFallback>
                                             </Avatar>
                                         )

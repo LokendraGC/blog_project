@@ -34,16 +34,18 @@ class AuthController extends Controller
             // Create the user
             $user = User::create($payload);
 
-            // Handle avatar
+            // In your registration controller
             if ($request->hasFile('avatar')) {
-                // If user uploaded an avatar file
                 $uploaded = $request->file('avatar')->store('avatars', 'public');
                 $user->avatar = basename($uploaded);
             } else {
-                // If no file uploaded, generate avatar from name
-                $user->avatar = $avatarGenerator->create($payload['name'])->toBase64();
-            }
+                // Generate smaller base64 avatar
+                $avatar = $avatarGenerator->create($payload['name'])
+                    ->setDimension(100, 100)
+                    ->toBase64();
 
+                $user->avatar = $avatar;
+            }
             $user->save();
 
             return $this->response->successMessage(
