@@ -26,7 +26,8 @@ class UpdateProfile extends FormRequest
             'name' => 'required|string|min:3|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . Auth::id(),
             'username' => 'required|string|max:255|unique:users,username,' . Auth::id(),
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'avatar' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+
         ];
     }
 }

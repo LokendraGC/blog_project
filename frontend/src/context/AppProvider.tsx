@@ -18,6 +18,7 @@ interface User {
 }
 
 interface AppProviderType {
+    updateProfile: (name: string, email: string, username: string, avatar: File | string | null) => Promise<void>
     user: User | null,
     logout: () => void,
     isLoading: boolean,
@@ -188,7 +189,6 @@ export default function AppProvider({
                 password_confirmation
             });
 
-            toast.success('Register Successfull');
         } catch (error: any) {
             if (error.response) {
                 console.log('Validation errors:', error.response.data.errors);
@@ -246,9 +246,61 @@ export default function AppProvider({
         }
     };
 
+    // for update profile
+    const updateProfile = async (
+        name: string,
+        email: string,
+        username: string,
+        avatar: File | string | null
+    ) => {
+        setIsLoading(true);
+
+        try {
+            const token = Cookies.get('authToken');
+            if (!token) {
+                setIsLoading(false);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('username', username);
+
+            // Only append avatar if it's a File (new upload)
+            if (avatar instanceof File) {
+                formData.append('avatar', avatar);
+            }
+            // Don't send avatar_url - let backend handle existing avatars
+
+            const response = await axios.post(
+                `${APP_URL}/api/auth/update-profile`,
+                formData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data',
+                    },
+                    withCredentials: true,
+                }
+            );
+
+            if (response.data.user) {
+                setUser(response.data.user);
+            }
+
+            toast.success(response.data.message || 'Profile updated successfully');
+
+        } catch (error) {
+            console.error(error);
+            toast.error('Error updating profile');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
-        <AppContext.Provider value={{ user, login, logout, register, isLoading, authToken, changePassword }}>
+        <AppContext.Provider value={{ updateProfile, user, login, logout, register, isLoading, authToken, changePassword }}>
             {isLoading ? <Loader /> : children}
         </AppContext.Provider>
     );

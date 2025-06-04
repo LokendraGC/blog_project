@@ -23,17 +23,27 @@ class AuthController extends Controller
         $this->response = $response;
     }
 
-    public function register(RegisterRequest $request)
+    public function register(RegisterRequest $request, Avatar $avatarGenerator)
     {
         $payload = $request->validated();
 
         try {
+            // Hash password
             $payload['password'] = Hash::make($payload['password']);
+
+            // Create the user
             $user = User::create($payload);
 
-            // Optional: handl  e uploaded avatar (if your form supports it)
-            $uploaded = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = basename($uploaded);
+            // Handle avatar
+            if ($request->hasFile('avatar')) {
+                // If user uploaded an avatar file
+                $uploaded = $request->file('avatar')->store('avatars', 'public');
+                $user->avatar = basename($uploaded);
+            } else {
+                // If no file uploaded, generate avatar from name
+                $user->avatar = $avatarGenerator->create($payload['name'])->toBase64();
+            }
+
             $user->save();
 
             return $this->response->successMessage(
@@ -48,6 +58,7 @@ class AuthController extends Controller
             );
         }
     }
+
 
 
     public function login(LoginRequest $request)
@@ -178,7 +189,6 @@ class AuthController extends Controller
 
                 $uploaded = $request->file('avatar')->store('avatars', 'public');
                 $data['avatar'] = basename($uploaded);
-
             }
 
             // Update user data

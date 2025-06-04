@@ -9,3 +9,6 @@ Route::get('/', function () {
 Route::get('/sanctum/csrf-cookie', function () {
     return response()->json(['csrf' => csrf_token()]);
 });
+
+
+
