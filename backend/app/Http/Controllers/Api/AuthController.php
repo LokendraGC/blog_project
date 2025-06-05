@@ -48,6 +48,8 @@ class AuthController extends Controller
             }
             $user->save();
 
+
+
             return $this->response->successMessage(
                 data: ['user' => $user],
                 message: 'User registered successfully.',

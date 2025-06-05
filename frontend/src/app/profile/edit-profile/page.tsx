@@ -128,14 +128,18 @@ const EditProfile = () => {
     // };
 
     const getAvatarUrl = (avatarPath: string | null | undefined) => {
+        // 1. Always show preview if it exists (highest priority)
+        if (previewImage) return previewImage;
+
+        // 2. If no avatar exists, return null (will use default)
         if (!avatarPath) return null;
 
-        // Handle base64 encoded avatars (from avatar generator)
-        if (avatarPath.startsWith('data:image')) {
+        // 3. If it's a generated avatar URL (http/https) or data URL, return as-is
+        if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) {
             return avatarPath;
         }
 
-        // Handle uploaded avatars (stored in storage)
+        // 4. Otherwise, it's a stored avatar - return full path
         return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${avatarPath}`;
     };
 
@@ -155,7 +159,7 @@ const EditProfile = () => {
                     />
                     <button
                         onClick={triggerFileInput}
-                        className="absolute bottom-0 right-0 bg-primary rounded-full p-2 text-white hover:bg-primary/90 transition-all"
+                        className="absolute bottom-0 right-0 bg-primary rounded-full p-2 text-white dark:text-gray-600 dark: cursor-pointer hover:bg-primary/90 transition-all"
                         aria-label="Change profile picture"
                     >
                         <Camera className="h-5 w-5" />
