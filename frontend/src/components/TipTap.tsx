@@ -50,39 +50,35 @@ const TipTap = () => {
         id: number;
         tag_name: string;
         short_description: string;
-        image: string; 
+        image: string;
         user_id?: number;
     }
 
     const [tags, setTags] = useState<TagData[]>([]);
 
 
-    const getTags = async () => {
-        try {
-            await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
-                withCredentials: true
-            })
-
-            const response = await axios.get(`${APP_URL}/api/auth/tag`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                }
-            })
-            setTags(response.data.data);
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
     useEffect(() => {
-        getTags()
-            .then(tags => {
-                // Do something with tags if needed
-            })
-            .catch(error => {
-                // Handle error if needed
-            });
+        const getTags = async () => {
+            try {
+                await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
+                    withCredentials: true,
+                });
+
+                const response = await axios.get(`${APP_URL}/api/auth/tag`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+
+                setTags(response.data.data.data);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        getTags();
+        console.log(tags);
     }, []);
 
 
@@ -124,9 +120,31 @@ const TipTap = () => {
         });
     };
 
+    const handleCheckboxChange = (tagId: number) => {
+        setFormData(prev => {
+            const tags = prev.tags ?? [];
+            if (tags.includes(tagId)) {
+                return { ...prev, tags: tags.filter(id => id !== tagId) };
+            } else {
+                return { ...prev, tags: [...tags, tagId] };
+            }
+        });
+    };
+
+
 
     const handleSubmit = async () => {
         if (!authToken) return;
+
+        if (
+            formData.title.trim() === '' ||
+            formData.content.trim() === '' ||
+            (formData.tags && formData.tags.length === 0)
+        ) {
+            toast.error('Please fill in all required fields');
+            return;
+        }
+
 
         try {
             await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
@@ -154,7 +172,7 @@ const TipTap = () => {
         // const response = await axios.post('') 
         console.log(formData);
     }
-    console.log(tags);
+    // console.log(tags);
 
     return (
         <div className=''>
@@ -181,7 +199,7 @@ const TipTap = () => {
                     <div className="container m-10">
                         <div className="mt-4">
                             {/* buttons */}
-                            <div>
+                            <div className='bg-gray-300 dark:bg-gray-600 dark:text-white text-black'>
 
                                 <Button
                                     variant="ghost"
@@ -331,8 +349,8 @@ const TipTap = () => {
 
                             </div>
                             {/* editor content */}
-                            <div>
-                                <EditorContent editor={editor} />
+                            <div className='border border-gray-400 border-t-0'>
+                                <EditorContent editor={editor} className='max-h-96 overflow-y-scroll' />
                             </div>
                         </div>
                     </div>
@@ -347,14 +365,15 @@ const TipTap = () => {
                                 <div key={tag.id} className="mb-3 flex items-center">
                                     <input
                                         type="checkbox"
-                                        name='tags[]'
-                                        value={tag.id} // Important for form submission
-                                        id={`tag-${tag.id}`} // Unique ID for each tag
-                                        className='cursor-pointer'
+                                        name="tags[]"
+                                        id={`tag-${tag.id}`}
+                                        checked={formData.tags?.includes(tag.id)}
+                                        onChange={() => handleCheckboxChange(tag.id)}
+                                        className="cursor-pointer"
                                     />
                                     <label
                                         htmlFor={`tag-${tag.id}`}
-                                        className='text-sm font-medium cursor-pointer text-gray-700 dark:text-gray-300 ml-1'
+                                        className="text-sm font-medium cursor-pointer text-gray-700 dark:text-gray-300 ml-1"
                                     >
                                         {tag.tag_name}
                                     </label>
@@ -363,6 +382,7 @@ const TipTap = () => {
                         ) : (
                             <p className="text-sm text-gray-500">No tags available</p>
                         )}
+
 
                     </div>
                 </div>

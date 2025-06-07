@@ -26,7 +26,7 @@ class StoreTagRequest extends FormRequest
             'short_description' => 'nullable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'posts' => 'nullable|array',
-            'posts.*' => 'exists:posts,id',
+            'posts.*' => 'exists:tags,id',
 
         ];
     }

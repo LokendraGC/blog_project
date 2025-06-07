@@ -197,3 +197,8 @@
 .ProseMirror h3[data-text-align="right"] {
   text-align: right;
 }
+
+
+.tiptap p{
+  height: 300px;
+}
