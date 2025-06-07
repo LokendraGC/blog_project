@@ -1,11 +1,13 @@
 'use client'
 
+import { usePathname } from 'next/navigation';
 import React from 'react'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
-import { Moon, Sun } from 'lucide-react'
+import { Edit, Moon, Sun } from 'lucide-react'
 import { useTheme } from "next-themes";
 import Link from 'next/link'
+
 import {
     Dialog,
     DialogClose,
@@ -125,8 +127,8 @@ const Navbar: React.FC = () => {
         return () => clearTimeout(timer);
     }, [authToken, APP_URL]);
 
-    console.log(userProfile);
-    console.log(avatar);
+    // console.log(userProfile);
+    // console.log(avatar);
 
     const handleChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -172,6 +174,11 @@ const Navbar: React.FC = () => {
     };
 
 
+    const pathname = usePathname();
+
+    const isWritePage = pathname === '/write-post';
+
+
     return (
         <nav className="flex justify-between items-center p-4 sticky bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
@@ -197,7 +204,12 @@ const Navbar: React.FC = () => {
             </div>
 
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-3 space-x-4">
+                {/* write post */}
+                <Link href="/write-post" className="flex items-center gap-2">
+                    <Edit size={18} />
+                    <span className="font-bold">Write</span>
+                </Link>
                 {/* dark mode */}
                 <Button variant="outline" size="icon" className="cursor-pointer" onClick={toggleTheme}>
                     <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
