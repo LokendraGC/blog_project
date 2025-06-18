@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Button } from './ui/button'
@@ -8,6 +8,10 @@ import { useRouter } from 'next/navigation'
 import { Label } from '@radix-ui/react-dropdown-menu'
 import { myAppHook } from '@/context/AppProvider'
 import axios from 'axios'
+import { AlignCenter, AlignRight, Image as ImageIcon, Link as LinkIcon } from 'lucide-react' // Renamed icons
+import { Image as TiptapImage } from '@tiptap/extension-image' // Tiptap extension
+import { Link as TiptapLink } from '@tiptap/extension-link'
+import TextAlign from '@tiptap/extension-text-align'
 
 
 import {
@@ -29,6 +33,7 @@ import {
     UnderlineIcon,
 } from "lucide-react";
 import toast from 'react-hot-toast'
+import Image from 'next/image'
 
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
@@ -97,8 +102,27 @@ const TipTap = () => {
         tags: [],
     })
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const editor = useEditor({
-        extensions: [StarterKit, Underline],
+        extensions: [StarterKit, Underline,
+            TextAlign.configure({
+                types: ['heading', 'paragraph'],
+            }),
+            TiptapLink.configure({
+                openOnClick: false,
+                HTMLAttributes: {
+                    class: 'text-blue-500 hover:underline',
+                },
+            }),
+            TiptapImage.configure({
+                inline: true,
+                allowBase64: true,
+                HTMLAttributes: {
+                    class: 'rounded-lg border border-gray-200',
+                },
+            }),
+        ],
         content: formData.content,
         onUpdate: ({ editor }) => {
             setFormData(prev => ({
@@ -132,6 +156,36 @@ const TipTap = () => {
     };
 
 
+    const handleImageUpload = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
+                // Show loading state
+                toast.loading('Uploading image...');
+
+                try {
+                    // Create preview while uploading
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const base64 = e.target?.result as string;
+                        editor?.chain().focus().setImage({ src: base64 }).run();
+                        toast.dismiss();
+                        toast.success('Image added');
+                    };
+                    reader.readAsDataURL(file);
+                } catch (error) {
+                    toast.dismiss();
+                    toast.error('Failed to upload image');
+                }
+            }
+        };
+
+        input.click();
+    };
 
     const handleSubmit = async () => {
         if (!authToken) return;
@@ -151,28 +205,44 @@ const TipTap = () => {
                 withCredentials: true
             })
 
-            const response = await axios.post(`${APP_URL}/api/auth/post`, {
-                title: formData.title,
-                content: formData.content,
-                tags: formData.tags
-            }, {
+            const formDataToSend = new FormData();
+            formDataToSend.append('title', formData.title);
+            formDataToSend.append('content', formData.content);
+            if (formData.tags) {
+                formData.tags.forEach(tag => formDataToSend.append('tags[]', tag.toString()));
+            }
+            if (formData.feature_image instanceof File) {
+                formDataToSend.append('feature_image', formData.feature_image);
+            }
+
+            const response = await axios.post(`${APP_URL}/api/auth/post`, formDataToSend, {
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authToken}`
-                }
+                },
+                withCredentials: true
             })
+
+
+            setFormData({
+                title: '',
+                content: '<p>Hello World! 🌎️</p>',
+                tags: [],
+            });
+
+
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
 
             toast.success('post created successfully')
 
-            console.log(response);
+            router.push('/');
+
 
         } catch (error) {
             console.error(error);
         }
-        // const response = await axios.post('') 
-        console.log(formData);
     }
-    // console.log(tags);
 
     return (
         <div className=''>
@@ -338,14 +408,72 @@ const TipTap = () => {
                                     <RemoveFormatting className="h-4 w-4" />
                                 </Button>
 
+                                {/* Left Alignment */}
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => editor.chain().focus().clearNodes().run()}
+                                    onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                                    className={editor.isActive({ textAlign: 'left' }) ? 'bg-accent' : ''}
                                 >
                                     <AlignLeft className="h-4 w-4" />
                                 </Button>
 
+                                {/* Center Alignment */}
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                                    className={editor.isActive({ textAlign: 'center' }) ? 'bg-accent' : ''}
+                                >
+                                    <AlignCenter className="h-4 w-4" />
+                                </Button>
+
+                                {/* Right Alignment */}
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                                    className={editor.isActive({ textAlign: 'right' }) ? 'bg-accent' : ''}
+                                >
+                                    <AlignRight className="h-4 w-4" />
+                                </Button>
+
+                                {/* Image Button */}
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleImageUpload}
+                                    className={editor.isActive('image') ? 'bg-accent' : ''}
+                                >
+                                    <ImageIcon className="h-4 w-4" />
+                                </Button>
+
+                                {/* Link Button */}
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                        const previousUrl = editor.getAttributes('link').href;
+                                        const url = window.prompt('Enter URL', previousUrl);
+
+                                        if (url === null) return;
+
+                                        if (url === '') {
+                                            editor.chain().focus().extendMarkRange('link').unsetLink().run();
+                                            return;
+                                        }
+
+                                        editor
+                                            .chain()
+                                            .focus()
+                                            .extendMarkRange('link')
+                                            .setLink({ href: url })
+                                            .run();
+                                    }}
+                                    className={editor.isActive('link') ? 'bg-accent' : ''}
+                                >
+                                    <LinkIcon className="h-4 w-4" />
+                                </Button>
 
                             </div>
                             {/* editor content */}
@@ -356,7 +484,50 @@ const TipTap = () => {
                     </div>
                 </div>
                 {/* tags */}
+
+
                 <div className='space-y-4 sticky top-4 h-fit'>
+                    <div className="space-y-2 bg-background p-4 rounded-lg border">
+                        <Label className='font-bold'>Feature Image</Label>
+                        {formData.feature_image ? (
+                            <div className="relative">
+                                <Image
+                                    src={URL.createObjectURL(formData.feature_image)}
+                                    alt="Preview"
+                                    height={200}
+                                    width={200}
+                                    className="rounded-lg"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, feature_image: null }))}
+                                    className="cursor-pointer absolute top-1 right-[100px] bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
+                                <span className="text-gray-500">No image selected</span>
+                            </div>
+                        )}
+                        <input
+                            type="file"
+                            accept='image/*'
+                            ref={fileInputRef}
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        feature_image: e.target.files![0]
+                                    }));
+                                }
+                            }}
+                            className="mt-2 cursor-pointer"
+                        />
+                    </div>
                     <div className="space-y-2 bg-background p-4 rounded-lg border">
 
                         <Label className='font-bold'>Select Tags</Label>
