@@ -180,7 +180,7 @@ const Navbar: React.FC = () => {
 
 
     return (
-        <nav className="flex justify-between items-center p-4 sticky bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <nav className="flex justify-between items-center p-4 sticky top-0 z-100 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
                 <span className="font-bold text-2xl text-gray-900 dark:text-white">
                     <Link href="/">

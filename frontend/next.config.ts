@@ -3,6 +3,7 @@ import path from 'path'
 
 const nextConfig: NextConfig = {
   images: {
+    domains: ['127.0.0.1'],
     remotePatterns: [
       {
         protocol: 'http',
@@ -12,7 +13,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
- 
+
 }
 
 export default nextConfig
