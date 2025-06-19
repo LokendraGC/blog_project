@@ -45,12 +45,6 @@ const TipTap = () => {
     const router = useRouter();
     const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
 
-    useEffect(() => {
-        if (!authToken) {
-            router.push('/');
-        }
-    }, [authToken, router]);
-
     interface TagData {
         id: number;
         tag_name: string;
@@ -78,13 +72,22 @@ const TipTap = () => {
 
                 setTags(response.data.data.data);
             } catch (error) {
-                console.error(error);
+                console.error('Error fetching tags:', error);
             }
         };
 
-        getTags();
-        console.log(tags);
-    }, []);
+        if (authToken) {
+            getTags();
+        }
+    }, [authToken]);
+
+
+    useEffect(() => {
+        if (!authToken) {
+            router.push('/');
+        }
+    }, [authToken]);
+
 
 
     interface FormData {
