@@ -3,7 +3,7 @@ import { myAppHook } from "@/context/AppProvider";
 import axios from "axios";
 import parse from 'html-react-parser';
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 const { convert } = require('html-to-text');
 
 
@@ -27,41 +27,77 @@ export default function Home() {
     }
   }
 
+  interface TagData {
+    id: number;
+    tag_name: string;
+    image?: string | null | undefined;
+    short_description?: string;
+    created_at: string | Date;
+    user: {
+      id: number;
+      name: string;
+      email: string;
+      avatar?: string | null | undefined;
+      username: string;
+      created_at: string;
+
+    },
+    posts: {
+      id: number;
+      title: string;
+      content: string;
+      feature_image?: string | null | undefined;
+      short_description?: string;
+      created_at: string | Date;
+    },
+  }
+
 
   const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
   const { authToken, isLoading } = myAppHook();
   const [posts, setPosts] = useState<PostData[]>([]);
-  const [user, setUser] = useState<PostData['user'] | null>(null);
+  const [user, setUser] = useState<TagData['user'] | null>(null);
+  const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
+  const [tagPosts, setTagPosts] = useState<PostData[]>([]);
 
   const { tags } = myAppHook();
 
+
+  const fetchPosts = async () => {
+    try {
+
+      const response = await axios.get(`${APP_URL}/api/auth/post`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      // console.log(response.data.data.data.user);
+      setPosts(response.data.data.data);
+      setUser(response.data.data.data.user);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   useEffect(() => {
-    const posts = async () => {
-      try {
+    fetchPosts();
+  }, []);
 
-        await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
-          withCredentials: true,
-        });
 
-        const response = await axios.get(`${APP_URL}/api/auth/post`, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
-          },
-        })
+  const fetchPostByTag = async (tagId: number) => {
+    try {
+      const response = await axios.get(`${APP_URL}/api/auth/tag/${tagId}`);
+      setSelectedTagId(tagId);
 
-        console.log(response.data.data.data.user);
-        setPosts(response.data.data.data);
-        setUser(response.data.data.data.user);
-
-      } catch (error) {
-        console.log(error);
-      }
+      setTagPosts(response.data.data.data.posts);
+      setUser(response.data.data.data.user);
+      console.log(user);
+    } catch (error) {
+      console.error('Error fetching tag posts:', error);
+      setTagPosts([]); // Clear posts on error
     }
-    if (authToken) {
-      posts();
-    }
-  }, [authToken])
+  };
 
 
   const parsedPosts = parse(`${posts}`);
@@ -95,20 +131,11 @@ export default function Home() {
   const IMAGE_URL = `${process.env.NEXT_PUBLIC_POST_IMAGE_BASE_URL}`;
   const AVATAR_URL = `${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/`;
 
-  console.log(tags);
+  // console.log(posts);
+
 
   return (
     <>
-      {/* 
-      {
-        posts.map((post) => (
-          <div key={post.id}>
-            <h1>{post.title}</h1>
-            <div>{parse(post.content)}</div>
-          </div>
-        ))
-      } */}
-
 
       <div className="max-w-4xl mx-auto px-4 py-10">
         {/* Top Navigation */}
@@ -116,11 +143,15 @@ export default function Home() {
           {/* Left Arrow */}
           <button
             onClick={() => scrollNav('left')}
-            className="absolute py-4 left-0 top-1/2 -translate-y-1/2 z-20 px-2  bg-gradient-to-r from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900 shadow hover:bg-opacity-90"
+            className="absolute py-4 left-0 top-1/2 -translate-y-1/2 z-20 px-1 pl-3 
+             bg-white dark:bg-gray-900  
+             hover:bg-white dark:hover:bg-gray-800 
+             transition-colors duration-200 cursor-pointer"
             aria-label="Scroll Left"
           >
             &lt;
           </button>
+
 
           {/* Scrollable Nav */}
           <div
@@ -128,15 +159,29 @@ export default function Home() {
             className="overflow-x-auto whitespace-nowrap scrollbar-hide scroll-smooth px-8"
           >
             <nav className="flex space-x-6 text-sm font-medium min-w-max">
-              <button className="text-black dark:text-white border-b-2 border-black dark:border-white">
-                For you
+              <button onClick={() => {
+                setSelectedTagId(null);
+                fetchPosts();
+              }} className={`text-black  dark:text-white cursor-pointer ${selectedTagId === null ? 'border-b-2 border-black dark:border-white' : 'border-transparent'}`}>
+                For You
               </button>
-              <button className="text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white">
-                Following
-              </button>
-              <button className="text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white">
-                Featured
-              </button>
+              {tags?.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => fetchPostByTag(tag.id)}
+                  className={`
+      ${selectedTagId === tag.id ?
+                      'border-black dark:border-white' :
+                      'border-transparent'
+                    }
+    `}
+                >
+                  {tag.tag_name}
+                </button>
+              ))}
+
+
+
 
               {/* <span className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 text-xs px-2 rounded">
                 New
@@ -148,24 +193,34 @@ export default function Home() {
           {/* Right Arrow */}
           <button
             onClick={() => scrollNav('right')}
-            className="absolute py-4 right-0 top-1/2 -translate-y-1/2 z-20 px-2  bg-gradient-to-l from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900 shadow hover:bg-opacity-90"
+            className="absolute py-4 right-0 top-1/2 -translate-y-1/2 z-20 px-3 
+             bg-white dark:bg-gray-900 
+             shadow-none dark:shadow 
+             hover:bg-white dark:hover:bg-gray-800 
+             transition-colors duration-200"
             aria-label="Scroll Right"
           >
             &gt;
           </button>
+
         </div>
 
 
         {/* Blog Post Card */}
         {
-          posts.map((post) => (
+          (selectedTagId ? tagPosts : posts).map((post) => (
             <div key={post.id} className="flex justify-between items-start py-6 border-b dark:border-gray-700">
               {/* Content Section */}
               <div className="flex-1 pr-4">
                 {/* Author */}
                 <div className="flex gap-3 items-center text-sm text-gray-500 dark:text-gray-400">
+                
                   <Image
-                    src={post.user.avatar ? AVATAR_URL + post.user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(post?.user.name || 'User')}&background=random`}
+                    src={
+                      post.user.avatar && typeof post.user.avatar === 'string' && post.user.avatar.length > 0
+                        ? AVATAR_URL + post.user.avatar
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.name)}&background=random`
+                    }
                     width={25}
                     height={25}
                     className="rounded-full"
@@ -177,8 +232,6 @@ export default function Home() {
                 <h2 className="cursor-pointer text-xl font-bold text-gray-900 dark:text-white mt-1 break-words leading-snug">
                   {post.title}
                 </h2>
-
-
 
                 {/* Description */}
                 <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">

@@ -29,7 +29,7 @@ interface AppProviderType {
     updateProfile: (name: string, email: string, username: string, avatar: File | string | null) => Promise<void>
     user: User | null,
     logout: () => void,
-    tags: TagData | null,
+    tags: TagData[] | null,
     isLoading: boolean,
     authToken: string | null,
     login: (email: string, password: string) => Promise<void>,
@@ -54,7 +54,7 @@ export default function AppProvider({
     const [authToken, setAuthToken] = useState<string | null>(null)
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
     const [user, setUser] = useState<User | null>(null)
-    const [tags, setTags] = useState<TagData | null>(null)
+    const [tags, setTags] = useState<TagData[] | null>(null)
 
     useEffect(() => {
         const token = Cookies.get('authToken');
@@ -102,28 +102,17 @@ export default function AppProvider({
     // tags
     useEffect(() => {
         const tagsData = async () => {
-
             try {
-
-                await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
-                    withCredentials: true,
-                });
-
-                const response = await axios.get(`${APP_URL}/api/auth/tag`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${authToken}`,
-                    },
-                });
+                const response = await axios.get(`${APP_URL}/api/auth/tag`);
                 setTags(response.data.data.data);
-
             } catch (error) {
-                console.error('Error fetching tags:', error)
+                console.error('Error fetching tags:', error);
             }
-        }
+        };
 
         tagsData();
     }, []);
+
 
     axios.defaults.withCredentials = true;
 
