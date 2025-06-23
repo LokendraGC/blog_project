@@ -25,11 +25,31 @@ interface TagData {
     user_id?: number;
 }
 
+
+interface PostData {
+    id: number;
+    title: string;
+    content: string;
+    feature_image?: string | null | undefined;
+    short_description?: string;
+    created_at: string | Date;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        avatar?: string | null | undefined;
+        username: string;
+        created_at: string | undefined;
+
+    }
+}
+
 interface AppProviderType {
     updateProfile: (name: string, email: string, username: string, avatar: File | string | null) => Promise<void>
     user: User | null,
     logout: () => void,
     tags: TagData[] | null,
+    posts: PostData[] | null,
     isLoading: boolean,
     authToken: string | null,
     login: (email: string, password: string) => Promise<void>,
@@ -55,6 +75,7 @@ export default function AppProvider({
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
     const [user, setUser] = useState<User | null>(null)
     const [tags, setTags] = useState<TagData[] | null>(null)
+    const [posts, setPosts] = useState<PostData[]>([]);
 
     useEffect(() => {
         const token = Cookies.get('authToken');
@@ -111,6 +132,30 @@ export default function AppProvider({
         };
 
         tagsData();
+    }, []);
+
+
+    // posts
+    const fetchPosts = async () => {
+        try {
+
+            const response = await axios.get(`${APP_URL}/api/auth/post`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+
+            // console.log(response.data.data.data.user);
+            setPosts(response.data.data.data);
+            setUser(response.data.data.data.user);
+            // console.log(user);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    useEffect(() => {
+        fetchPosts();
     }, []);
 
 
@@ -320,7 +365,7 @@ export default function AppProvider({
     };
 
     return (
-        <AppContext.Provider value={{ tags, updateProfile, user, login, logout, register, isLoading, authToken, changePassword }}>
+        <AppContext.Provider value={{ tags, posts, updateProfile, user, login, logout, register, isLoading, authToken, changePassword }}>
             {isLoading ? <Loader /> : children}
         </AppContext.Provider>
     );
