@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import React from 'react'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
-import { Edit, Moon, Sun } from 'lucide-react'
+import { Activity, Edit, Moon, Sun } from 'lucide-react'
 import { useTheme } from "next-themes";
 import Link from 'next/link'
 
@@ -257,15 +257,18 @@ const Navbar: React.FC = () => {
                                     <Link href="/profile">
                                         <DropdownMenuItem asChild>
                                             <div className="flex items-center cursor-pointer">
-                                                <Settings className="mr-3 h-[10px] w-[22px]" />
+                                                <User className="mr-3 h-[10px] w-[22px]" />
                                                 Profile
                                             </div>
                                         </DropdownMenuItem>
                                     </Link>
-                                    <DropdownMenuItem className="cursor-pointer">
-                                        <User className="mr-3 h-[10px] w-[22px]" />
-                                        Setting
-                                    </DropdownMenuItem>
+
+                                    <Link href="/activity">
+                                        <DropdownMenuItem className="cursor-pointer">
+                                            <Activity className="mr-3 h-[10px] w-[22px]" />
+                                            Activity
+                                        </DropdownMenuItem>
+                                    </Link>
 
                                     <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={logout}>
                                         <LogOut className="mr-3 h-[10px] w-[22px]" />
