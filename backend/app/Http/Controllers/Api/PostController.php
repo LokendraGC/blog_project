@@ -7,9 +7,12 @@ use App\Http\Requests\PostUpdate;
 use App\Http\Requests\StorePostRequest;
 use App\Models\Post;
 use App\Services\ResponseService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+
+use function Laravel\Prompts\error;
 
 class PostController extends Controller
 {
@@ -241,5 +244,26 @@ class PostController extends Controller
         $user->likedPosts()->detach($post->id);
 
         return response()->json(['message' => 'Post unliked']);
+    }
+
+    public function getCreatedPost()
+    {
+        $user = Auth::user();
+        $posts = Post::where('user_id', $user->id)->get();
+
+        try {
+
+            if ($posts) {
+                return $this->response->successMessage(
+                    ['data' => $posts],
+                    message: 'Posts retrieved successfully',
+                    code: 200
+                );
+            }
+        } catch (\Exception $err) {
+            return response()->json([
+                'message' => 'Error while getting created post: ' . $err->getMessage()
+            ], 500);
+        }
     }
 }
