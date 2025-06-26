@@ -20,7 +20,7 @@ export default function Home() {
     content: string;
     feature_image?: string | null | undefined;
     short_description?: string;
-    created_at: string | Date;
+    created_at: string;
     user: {
       id: number;
       name: string;
@@ -103,13 +103,17 @@ export default function Home() {
   };
 
   function trimWords(text: string, wordLimit: number) {
-    const plainText = convert(text, { wordwrap: false }); // Removes HTML
+    const plainText = convert(text, { wordwrap: false });
     return plainText.split(' ').slice(0, wordLimit).join(' ') + '...';
   }
 
   function formatToMonthDay(dateStr: string): string {
     const date = new Date(dateStr);
-    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    const options: Intl.DateTimeFormatOptions = {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    };
     return date.toLocaleDateString('en-US', options);
   }
 
@@ -216,7 +220,13 @@ export default function Home() {
                       alt={user?.name || 'User'}
                     />
                     {user?.name}
+                    <div>
+                      {formatToMonthDay(post.created_at)}
+
+                    </div>
                   </div>
+
+
 
                   {/* Title */}
 
@@ -233,6 +243,8 @@ export default function Home() {
 
                   {/* Meta Info */}
                   <div className="flex items-center justify-between mt-3 text-sm text-gray-500 dark:text-gray-400">
+
+
                     {/* Left Side: Meta Info */}
                     <div className="flex gap-4 mt-2">
                       <button className="flex items-center gap-1 text-pink-500 dark:text-pink-400">
@@ -307,6 +319,11 @@ export default function Home() {
                         alt={post.user?.name || 'User'}
                       />
                       {post.user.name}
+
+                      <div>
+                        {formatToMonthDay(post.created_at)}
+                      </div>
+
                     </div>
 
                     {/* Title */}

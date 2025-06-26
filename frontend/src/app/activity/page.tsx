@@ -7,6 +7,12 @@ import axios from "axios"
 import { Bookmark, Heart, MessageSquare, Pencil, Trash2 } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState } from "react"
+const { convert } = require('html-to-text');
+import parse from 'html-react-parser';
+import slugify from "slugify"
+import Link from "next/link"
+import toast from "react-hot-toast"
+
 
 
 interface PostData {
@@ -15,7 +21,7 @@ interface PostData {
     feature_image: string
     content: string
     short_description: string
-    created_at: string | Date
+    created_at: string
 }
 
 
@@ -23,6 +29,10 @@ const Activity = () => {
 
     const [posts, setPosts] = useState<PostData[]>([]);
     const { user, authToken } = myAppHook();
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [postIdToDelete, setPostIdToDelete] = useState<number | null>(null);
+
+
     const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
     const IMAGE_URL = `${process.env.NEXT_PUBLIC_POST_IMAGE_BASE_URL}`;
     const AVATAR_URL = `${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/`;
@@ -56,9 +66,57 @@ const Activity = () => {
 
     }, [authToken])
 
+    function trimWords(text: string, wordLimit: number) {
+        const plainText = convert(text, { wordwrap: false });
+        return plainText.split(' ').slice(0, wordLimit).join(' ') + '...';
+    }
 
-    console.log(user);
 
+    function formatToMonthDay(dateStr: string): string {
+        const date = new Date(dateStr);
+        const options: Intl.DateTimeFormatOptions = {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        };
+        return date.toLocaleDateString('en-US', options);
+    }
+
+    const handleDeleteClick = (id: number) => {
+        setPostIdToDelete(id);
+        setShowConfirmModal(true);
+    };
+
+
+    const confirmDelete = async () => {
+        if (!authToken || postIdToDelete === null) return;
+
+        try {
+            await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
+                withCredentials: true,
+            });
+
+
+            await axios.delete(`${APP_URL}/api/auth/post/${postIdToDelete}`, {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                },
+            });
+
+            setPosts(prevPosts => prevPosts.filter(post => post.id !== postIdToDelete));
+
+            toast.success('Post deleted successfully');
+
+        } catch (error) {
+            console.error("Error deleting post:", error);
+        } finally {
+            setShowConfirmModal(false);
+            setPostIdToDelete(null);
+        }
+    };
+
+
+    // console.log(user);
 
     return (
         <div>
@@ -74,7 +132,7 @@ const Activity = () => {
                         <Heart className="w-4 h-4 text-pink-500 dark:text-pink-400" />
                         Your Posts
                         <span className="bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-200 text-xs px-2 py-0.5 rounded-full ml-1">
-                            24
+                            {posts.length}
                         </span>
                     </TabsTrigger>
                     <TabsTrigger
@@ -97,6 +155,8 @@ const Activity = () => {
                     <div className="space-y-4">
                         {
                             posts.map((post) => {
+                                const slug = slugify(post.title, { lower: true });
+
                                 return (
 
                                     <div key={post.id} className="p-4 border rounded-xl hover:shadow-md transition-all 
@@ -120,21 +180,53 @@ const Activity = () => {
 
 
                                             <div>
-                                                <h3 className="font-semibold dark:text-white">{post.title} </h3>
-                                                <p className="text-sm text-gray-500 dark:text-gray-400">2 days ago</p>
+                                                <Link href={`post/${slug}`}>
+                                                    <h3 className="font-semibold dark:text-white">{post.title} </h3>
+                                                </Link>
+                                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                    {formatToMonthDay(post.created_at)}
+                                                </p>
                                             </div>
 
                                             {/* Edit / Delete */}
                                             <div className="flex-3">
                                                 <div className="flex justify-end gap-4 pt-3">
-                                                    <button className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
-                                                        <Pencil className="w-4 h-4" />
-                                                        <span>Edit</span>
-                                                    </button>
-                                                    <button className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400">
+                                                        <Link href={`/post/${slug}/edit`}>
+                                                            <button className="flex items-center gap-1 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
+                                                                <Pencil className="w-4 h-4" />
+                                                                <span>Edit</span>
+                                                            </button>
+                                                        </Link>
+                                                    <button onClick={() => handleDeleteClick(post.id)} className="flex items-center gap-1 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400">
                                                         <Trash2 className="w-4 h-4" />
                                                         <span>Delete</span>
                                                     </button>
+
+                                                    {
+                                                        showConfirmModal && (
+                                                            <div className="fixed inset-0 z-5 flex items-center justify-center bg-transparent bg-opacity-50">
+                                                                <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+                                                                    <h2 className="text-lg font-semibold mb-4 text-gray-800">Confirm Deletion</h2>
+                                                                    <p className="text-gray-600 mb-6">Are you sure you want to delete this post? This action cannot be undone.</p>
+                                                                    <div className="flex justify-end space-x-3">
+                                                                        <button
+                                                                            onClick={() => setShowConfirmModal(false)}
+                                                                            className="cursor-pointer px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                                                                        >
+                                                                            Cancel
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={confirmDelete}
+                                                                            className="cursor-pointer px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                                                                        >
+                                                                            Delete
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    }
+
                                                 </div>
                                             </div>
 
@@ -142,7 +234,7 @@ const Activity = () => {
 
                                         {/* Post Content */}
                                         <p className="text-gray-700 dark:text-gray-300 mb-3">
-                                            This is a post you liked recently. The content would appear here...
+                                            {parse(trimWords(post.content, 5))}
                                         </p>
 
                                         {/* Liked / Comment */}
