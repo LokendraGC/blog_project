@@ -34,13 +34,23 @@ import {
 } from "lucide-react";
 import toast from 'react-hot-toast'
 import Image from 'next/image'
+import { PostData } from '@/types'
+import { EDIT_POST } from '@/lib/ApiEndPoints'
 
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 const headingLevels: HeadingLevel[] = [1, 2, 3, 4, 5, 6];
 
+interface TipTapProps {
+    post?: PostData
+    onCreate?: (content: string, title: string) => void
+    onUpdate?: (content: string, title: string) => void
+}
 
-const TipTap = () => {
+
+const TipTap = ({ post }: TipTapProps) => {
+
+
     const { authToken, isLoading: isAppLoading } = myAppHook();
     const router = useRouter();
     const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
@@ -88,6 +98,41 @@ const TipTap = () => {
         }
     }, [authToken]);
 
+
+    // updating post 
+    useEffect(() => {
+        const updatePost = async () => {
+            try {
+                await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
+                    withCredentials: true,
+                });
+
+                const response = await axios.post(`${EDIT_POST}/${post?.id}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                    data: {
+                        title: post?.title,
+                        content: post?.content,
+                        tags: tags.map(tag => {
+                            return tag.id
+                        }),
+                        feature_image: post?.feature_image
+                    }
+                });
+
+                if (response.data.status === 'success') {
+                    toast.success('Post Updated Successfully');
+                }
+
+            } catch (error) {
+                console.error('Error updating post:', error);
+            }
+        }
+
+        updatePost();
+    },[authToken]);
 
 
     interface FormData {
