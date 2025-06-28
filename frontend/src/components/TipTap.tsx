@@ -236,6 +236,12 @@ const TipTap = ({ post, onUpdate }: TipTapProps) => {
                 if (formData.tags) {
                     formData.tags.forEach(tag => formDataToSend.append('tags[]', tag.toString()));
                 }
+                // Add this flag when image is removed
+                if (formData.feature_image === null && post?.feature_image) {
+                    formDataToSend.append('remove_feature_image', 'true');
+                }
+
+                // Handle file upload if new image selected
                 if (formData.feature_image instanceof File) {
                     formDataToSend.append('feature_image', formData.feature_image);
                 }
@@ -548,7 +554,11 @@ const TipTap = ({ post, onUpdate }: TipTapProps) => {
                             formData.feature_image ? (
                                 <div className="relative">
                                     <Image
-                                        src={`${IMAGE_URL}/${formData.feature_image}`}
+                                        src={
+                                            typeof formData.feature_image === 'string'
+                                                ? `${IMAGE_URL}/${formData.feature_image}` // Existing image path
+                                                : URL.createObjectURL(formData.feature_image) // New File object
+                                        }
                                         alt="Preview"
                                         height={200}
                                         width={200}

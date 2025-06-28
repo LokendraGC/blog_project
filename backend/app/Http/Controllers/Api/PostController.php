@@ -118,8 +118,16 @@ class PostController extends Controller
         $payload = $request->validated();
 
         try {
-            // Handle file upload if exists
-            if ($request->hasFile('feature_image')) {
+            // Handle image removal if flag is set
+            if ($request->input('remove_feature_image') === 'true') {
+                // Delete old image if it exists
+                if ($post->feature_image && Storage::disk('public')->exists($post->feature_image)) {
+                    Storage::disk('public')->delete($post->feature_image);
+                }
+                $payload['feature_image'] = null; // Set to null in database
+            }
+            // Handle new file upload if exists
+            elseif ($request->hasFile('feature_image')) {
                 // Delete old image if it exists
                 if ($post->feature_image && Storage::disk('public')->exists($post->feature_image)) {
                     Storage::disk('public')->delete($post->feature_image);
