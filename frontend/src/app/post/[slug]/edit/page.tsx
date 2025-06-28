@@ -6,7 +6,6 @@ import { EDIT_POST } from '@/lib/ApiEndPoints';
 import { useParams } from 'next/navigation';
 import React from 'react'
 import slugify from 'slugify';
-import { PostData } from "@/types";
 
 
 const EditPost = () => {

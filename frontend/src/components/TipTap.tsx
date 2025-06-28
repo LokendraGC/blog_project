@@ -48,7 +48,7 @@ interface TipTapProps {
 }
 
 
-const TipTap = ({ post }: TipTapProps) => {
+const TipTap = ({ post, onUpdate }: TipTapProps) => {
 
 
     const { authToken, isLoading: isAppLoading } = myAppHook();
@@ -64,7 +64,7 @@ const TipTap = ({ post }: TipTapProps) => {
     }
 
     const [tags, setTags] = useState<TagData[]>([]);
-
+    const IMAGE_URL = process.env.NEXT_PUBLIC_POST_IMAGE_BASE_URL;
 
     useEffect(() => {
         const getTags = async () => {
@@ -99,56 +99,25 @@ const TipTap = ({ post }: TipTapProps) => {
     }, [authToken]);
 
 
-    // updating post 
-    useEffect(() => {
-        const updatePost = async () => {
-            try {
-                await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
-                    withCredentials: true,
-                });
-
-                const response = await axios.post(`${EDIT_POST}/${post?.id}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${authToken}`,
-                    },
-                    data: {
-                        title: post?.title,
-                        content: post?.content,
-                        tags: tags.map(tag => {
-                            return tag.id
-                        }),
-                        feature_image: post?.feature_image
-                    }
-                });
-
-                if (response.data.status === 'success') {
-                    toast.success('Post Updated Successfully');
-                }
-
-            } catch (error) {
-                console.error('Error updating post:', error);
-            }
-        }
-
-        updatePost();
-    },[authToken]);
-
-
     interface FormData {
         title: string;
         short_description?: string;
         content: string;
         tags?: number[];
-        feature_image?: File | null;
+        feature_image?: File | string | null;
     }
 
 
+
     const [formData, setFormData] = useState<FormData>({
-        title: '',
-        content: '<p>Hello World! 🌎️</p>',
-        tags: [],
+        title: post?.title || '',
+        content: post?.content || '<p>Hello World! 🌎️</p>',
+        tags: post?.tags?.map((tag: { id: string }) => Number(tag.id)) || [],
+        short_description: post?.short_description || '',
+        feature_image: post?.feature_image || null,
     })
+
+    console.log(formData.feature_image);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -179,6 +148,13 @@ const TipTap = ({ post }: TipTapProps) => {
             }));
         },
     });
+
+    // Update editor content when post data changes
+    useEffect(() => {
+        if (editor && post?.content) {
+            editor.commands.setContent(post.content);
+        }
+    }, [editor, post?.content]);
 
     if (!editor) {
         return null;
@@ -247,48 +223,78 @@ const TipTap = ({ post }: TipTapProps) => {
             return;
         }
 
-
         try {
             await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
                 withCredentials: true
             })
 
-            const formDataToSend = new FormData();
-            formDataToSend.append('title', formData.title);
-            formDataToSend.append('content', formData.content);
-            if (formData.tags) {
-                formData.tags.forEach(tag => formDataToSend.append('tags[]', tag.toString()));
+            if (post?.id) {
+                // Update existing post
+                const formDataToSend = new FormData();
+                formDataToSend.append('title', formData.title);
+                formDataToSend.append('content', formData.content);
+                if (formData.tags) {
+                    formData.tags.forEach(tag => formDataToSend.append('tags[]', tag.toString()));
+                }
+                if (formData.feature_image instanceof File) {
+                    formDataToSend.append('feature_image', formData.feature_image);
+                }
+
+                formDataToSend.append('_method', 'PUT');
+                const response = await axios.post(`${EDIT_POST}/${post.id}`, formDataToSend, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'multipart/form-data',
+                    },
+                    withCredentials: true
+                });
+
+                console.log(response);
+
+                if (response.data.status === 'success') {
+                    toast.success('Post Updated Successfully');
+                    if (onUpdate) {
+                        onUpdate(formData.content, formData.title);
+                    }
+                    router.push('/');
+
+                }
+            } else {
+                // Create new post
+                const formDataToSend = new FormData();
+                formDataToSend.append('title', formData.title);
+                formDataToSend.append('content', formData.content);
+                if (formData.tags) {
+                    formData.tags.forEach(tag => formDataToSend.append('tags[]', tag.toString()));
+                }
+                if (formData.feature_image instanceof File) {
+                    formDataToSend.append('feature_image', formData.feature_image);
+                }
+
+                const response = await axios.post(`${APP_URL}/api/auth/post`, formDataToSend, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    withCredentials: true
+                })
+
+                setFormData({
+                    title: '',
+                    content: '<p>Hello World! 🌎️</p>',
+                    tags: [],
+                });
+
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+
+                toast.success('Post created successfully')
+                router.push('/');
             }
-            if (formData.feature_image instanceof File) {
-                formDataToSend.append('feature_image', formData.feature_image);
-            }
 
-            const response = await axios.post(`${APP_URL}/api/auth/post`, formDataToSend, {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
-                },
-                withCredentials: true
-            })
-
-
-            setFormData({
-                title: '',
-                content: '<p>Hello World! 🌎️</p>',
-                tags: [],
-            });
-
-
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-
-            toast.success('post created successfully')
-
-            router.push('/');
-
-
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            console.error("Full error response:", error.response?.data);
+            toast.error(error.response?.data?.message || "Something went wrong");
         }
     }
 
@@ -308,7 +314,7 @@ const TipTap = ({ post }: TipTapProps) => {
                     onClick={handleSubmit}
                     disabled={isAppLoading}
                 >
-                    {isAppLoading ? 'Saving...' : 'Save'}
+                    {isAppLoading ? 'Saving...' : post?.id ? 'Update Post' : 'Save'}
                 </Button>
             </div>
             <div className='grid grid-cols-1 items-center md:grid-cols-3 gap-[80px] px-10 py-4'>
@@ -537,30 +543,32 @@ const TipTap = ({ post }: TipTapProps) => {
                 <div className='space-y-4 sticky top-4 h-fit'>
                     <div className="space-y-2 bg-background p-4 rounded-lg border">
                         <Label className='font-bold'>Feature Image</Label>
-                        {formData.feature_image ? (
-                            <div className="relative">
-                                <Image
-                                    src={URL.createObjectURL(formData.feature_image)}
-                                    alt="Preview"
-                                    height={200}
-                                    width={200}
-                                    className="rounded-lg"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData(prev => ({ ...prev, feature_image: null }))}
-                                    className="cursor-pointer absolute top-1 right-[100px] bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
-                                <span className="text-gray-500">No image selected</span>
-                            </div>
-                        )}
+                        {
+
+                            formData.feature_image ? (
+                                <div className="relative">
+                                    <Image
+                                        src={`${IMAGE_URL}/${formData.feature_image}`}
+                                        alt="Preview"
+                                        height={200}
+                                        width={200}
+                                        className="rounded-lg"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, feature_image: null }))}
+                                        className="cursor-pointer absolute top-1 right-[100px] bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center">
+                                    <span className="text-gray-500">No image selected</span>
+                                </div>
+                            )}
                         <input
                             type="file"
                             accept='image/*'

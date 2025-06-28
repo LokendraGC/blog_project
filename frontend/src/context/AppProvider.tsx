@@ -42,6 +42,7 @@ interface PostData {
         created_at: string | undefined;
 
     }
+    tags?: { id: string }[];
 }
 
 interface AppProviderType {

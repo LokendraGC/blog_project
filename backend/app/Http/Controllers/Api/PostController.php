@@ -120,7 +120,7 @@ class PostController extends Controller
         try {
             // Handle file upload if exists
             if ($request->hasFile('feature_image')) {
-                // Delete old image
+                // Delete old image if it exists
                 if ($post->feature_image && Storage::disk('public')->exists($post->feature_image)) {
                     Storage::disk('public')->delete($post->feature_image);
                 }
@@ -128,6 +128,11 @@ class PostController extends Controller
                 // Store new image
                 $payload['feature_image'] = $request->file('feature_image')
                     ->store("post_images/{$post->user_id}", 'public');
+            }
+
+            // Preserve existing title if no new title is provided
+            if (!isset($payload['title'])) {
+                $payload['title'] = $post->title; // Fallback to current title
             }
 
             // Extract tags from payload

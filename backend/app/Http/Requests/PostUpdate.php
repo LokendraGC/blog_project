@@ -21,13 +21,21 @@ class PostUpdate extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'title' => 'required|string|max:255',
-            'short_description' => 'required|string',
-            'content' => 'required|string',
-            'feature_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'tags' => 'nullable|array',
-            'tags.*' => 'exists:tags,id',
+        // Default rules (for creating a post)
+        $rules = [
+            'short_description' => 'nullable|string',
+            'content' => 'nullable|string',
+            'feature_image' => 'nullable|image|mimes:jpeg,png,webp|max:5120',
+            'tags' => 'nullable|array|max:5',
+            'tags.*' => 'integer|exists:tags,id',
         ];
+
+        if ($this->isMethod('post')) {
+            $rules['title'] = 'required|string|max:255';
+        } else {
+            $rules['title'] = 'nullable|string|max:255';
+        }
+
+        return $rules;
     }
 }

@@ -14,4 +14,5 @@ export interface PostData {
         created_at: string | undefined;
 
     }
+    tags?: { id: string }[];
 }
