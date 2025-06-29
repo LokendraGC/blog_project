@@ -1,11 +1,13 @@
 'use client'
 import { myAppHook } from "@/context/AppProvider";
+import { SAVE_POST } from "@/lib/ApiEndPoints";
 import axios from "axios";
 import parse from 'html-react-parser';
 import { Heart, MessageSquare } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import slugify from 'slugify';
 
 
@@ -48,6 +50,7 @@ export default function Home() {
   const [user, setUser] = useState<UserData | null>(null);
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [tagPosts, setTagPosts] = useState<PostData[]>([]);
+  const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set());
 
   const { tags } = myAppHook();
 
@@ -125,8 +128,79 @@ export default function Home() {
   const IMAGE_URL = `${process.env.NEXT_PUBLIC_POST_IMAGE_BASE_URL}`;
   const AVATAR_URL = `${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/`;
 
-  // console.log(user?.created_at);
+  const handleSavePost = async (id: number) => {
+    try {
+      await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
+        withCredentials: true,
+      });
 
+      await axios.post(
+        `${SAVE_POST}/${id}/save`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      toast.success('Post saved');
+      // Update the savedPosts set
+      setSavedPosts(prev => new Set(prev).add(id));
+    } catch (error) {
+      console.error('Save post failed:', error);
+    }
+  };
+
+  const handleUnSavePost = async (id: number) => {
+    try {
+      await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
+        withCredentials: true,
+      });
+
+      await axios.delete(
+        `${SAVE_POST}/${id}/unsave`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      toast.success('Post unsaved');
+      // Update the savedPosts set
+      setSavedPosts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    } catch (error) {
+      console.error('Unsave post failed:', error);
+    }
+  };
+
+
+  useEffect(() => {
+    const fetchSavedPosts = async () => {
+      try {
+        const res = await axios.get(`${SAVE_POST}/saved-posts`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+          withCredentials: true,
+        });
+        setSavedPosts(new Set(res.data.savedPostIds));
+      } catch (error) {
+        console.error("Error fetching saved posts", error);
+      }
+    };
+
+    if (authToken) {
+      fetchSavedPosts();
+    }
+  }, [authToken]);
 
   return (
     <>
@@ -260,22 +334,25 @@ export default function Home() {
 
 
                     {/* Right Side: Save Icon */}
-                    <button className="text-gray-500 cursor-pointer mr-[80px] hover:text-black dark:text-gray-400 dark:hover:text-white">
+                    <button onClick={() => savedPosts.has(post.id) ? handleUnSavePost(post.id) : handleSavePost(post.id)} className="text-gray-500 cursor-pointer mr-[80px] hover:text-black dark:text-gray-400 dark:hover:text-white">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5"
-                        fill="none"
                         viewBox="0 0 24 24"
+                        fill={savedPosts.has(post.id) ? "currentColor" : "none"}
                         stroke="currentColor"
                         strokeWidth={2}
                       >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          d="M5 5v14l7-5 7 5V5a2 2 0 00-2-2H7a2 2 0 00-2 2z"
+                          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
                         />
                       </svg>
+
                     </button>
+
+
                   </div>
 
                 </div>
@@ -356,19 +433,19 @@ export default function Home() {
 
 
                       {/* Right Side: Save Icon */}
-                      <button className="text-gray-500 cursor-pointer mr-[80px] hover:text-black dark:text-gray-400 dark:hover:text-white">
+                      <button onClick={() => savedPosts.has(post.id) ? handleUnSavePost(post.id) : handleSavePost(post.id)} className="text-gray-500 cursor-pointer mr-[80px] hover:text-black dark:text-gray-400 dark:hover:text-white">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-5 w-5"
-                          fill="none"
                           viewBox="0 0 24 24"
+                          fill={savedPosts.has(post.id) ? "currentColor" : "none"}
                           stroke="currentColor"
                           strokeWidth={2}
                         >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            d="M5 5v14l7-5 7 5V5a2 2 0 00-2-2H7a2 2 0 00-2 2z"
+                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
                           />
                         </svg>
                       </button>

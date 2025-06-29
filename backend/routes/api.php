@@ -43,6 +43,7 @@
         Route::delete('/post/{post}/unlike', [PostController::class, 'unlike']);
 
         // save post
-        Route::post('/posts/{post}/save', [PostController::class, 'savePost']);
-        Route::delete('/posts/{post}/unsave', [PostController::class, 'unsavePost']);
+        Route::post('/post/{post}/save', [PostController::class, 'savePost']);
+        Route::delete('/post/{post}/unsave', [PostController::class, 'unsavePost']);
+        Route::get('/post/saved-posts', [PostController::class, 'getSavedPosts']);
     });

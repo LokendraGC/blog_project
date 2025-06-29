@@ -202,46 +202,57 @@ class PostController extends Controller
     public function savePost($postId)
     {
         try {
-            $post = Post::find($postId);
-
-            if (!$post) {
-                return response()->json(['message' => 'Post not found.'], 404);
-            }
+            $post = Post::findOrFail($postId); // throws 404 if not found
 
             $user = Auth::user();
 
-            // This will attach if not already saved, and ignore if already saved
-            $user->savedPosts()->syncWithoutDetaching([$postId]);
+            // Check if already saved to prevent duplicates
+            if (!$user->savedPosts()->where('post_id', $postId)->exists()) {
+                $user->savedPosts()->attach($postId);
+            }
 
             return response()->json(['message' => 'Post saved']);
         } catch (\Exception $err) {
             return response()->json([
-                'message' => "Error while saving post: " . $err->getMessage()
+                'message' => "Error saving post: " . $err->getMessage()
             ], 500);
         }
     }
-
-
 
     public function unsavePost($postId)
     {
         try {
-            $post = Post::find($postId);
-
-            if (!$post) {
-                return response()->json(['message' => 'Post not found.'], 404);
-            }
+            $post = Post::findOrFail($postId);
 
             $user = Auth::user();
-            $user->savedPosts()->detach($post->id);
+            $user->savedPosts()->detach($postId);
 
-            return response()->json(['message' => 'Post unsaved successfully.']);
+            return response()->json(['message' => 'Post unsaved']);
         } catch (\Exception $err) {
             return response()->json([
-                'message' => 'Error while unsaving post: ' . $err->getMessage()
+                'message' => 'Error unsaving post: ' . $err->getMessage()
             ], 500);
         }
     }
+
+    // is saved post
+    // Add a new endpoint to get all saved post IDs at once
+    public function getSavedPosts()
+    {
+        try {
+            $user = Auth::user();
+            $savedPostIds = $user->savedPosts()->pluck('post_id')->toArray();
+
+            return response()->json([
+                'savedPostIds' => $savedPostIds
+            ]);
+        } catch (\Exception $err) {
+            return response()->json([
+                'message' => 'Error fetching saved posts: ' . $err->getMessage()
+            ], 500);
+        }
+    }
+
 
     public function like(Post $post)
     {
