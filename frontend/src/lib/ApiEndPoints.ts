@@ -5,3 +5,4 @@ export const SERVER_ENDPOINT: string = process.env.NEXT_PUBLIC_API_URL || "http:
 export const API_URL: string = SERVER_ENDPOINT + "/api";
 
 export const EDIT_POST: string = API_URL + "/auth/post";
+

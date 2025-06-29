@@ -193,17 +193,26 @@ const TipTap = ({ post, onUpdate }: TipTapProps) => {
 
                 try {
                     // Create preview while uploading
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const base64 = e.target?.result as string;
-                        editor?.chain().focus().setImage({ src: base64 }).run();
-                        toast.dismiss();
-                        toast.success('Image added');
-                    };
-                    reader.readAsDataURL(file);
+                    // const reader = new FileReader();
+                    // reader.onload = (e) => {
+                    //     const base64 = e.target?.result as string;
+                    //     editor?.chain().focus().setImage({ src: base64 }).run();
+                    //     toast.dismiss();
+                    //     toast.success('Image added');
+                    // };
+                    // reader.readAsDataURL(file);
+
+                    const imageUrl = await uploadToCloudinary(file);
+
+                    editor?.chain().focus().setImage({ src: imageUrl }).run();
+
+                    toast.dismiss();
+                    toast.success('Image added');
+
                 } catch (error) {
                     toast.dismiss();
                     toast.error('Failed to upload image');
+                    console.error(error);
                 }
             }
         };
@@ -626,6 +635,33 @@ const TipTap = ({ post, onUpdate }: TipTapProps) => {
             </div >
         </div >
     )
+
+
 }
+
+async function uploadToCloudinary(file: File): Promise<string> {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = "blog_image";
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+
+    const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+            method: "POST",
+            body: formData,
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.secure_url; // return the Cloudinary image URL
+}
+
 
 export default TipTap
