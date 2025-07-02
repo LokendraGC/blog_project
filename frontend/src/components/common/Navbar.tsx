@@ -283,7 +283,7 @@ const Navbar: React.FC = () => {
                                 <DialogTrigger asChild>
                                     <Button className="cursor-pointer">Sign in</Button>
                                 </DialogTrigger>
-                                <DialogContent className="sm:max-w-[425px]">
+                                <DialogContent className="sm:max-w-[425px] z-[1000]">
                                     <form onSubmit={handleFormSubmit}>
                                         <DialogHeader className="my-5">
                                             <DialogTitle>{isLogin ? 'Sign In' : 'Register'}</DialogTitle>

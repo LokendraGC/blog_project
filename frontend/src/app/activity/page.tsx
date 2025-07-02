@@ -12,6 +12,10 @@ import parse from 'html-react-parser';
 import slugify from "slugify"
 import Link from "next/link"
 import toast from "react-hot-toast"
+import { GET_PROFILE, SAVE_POST } from "@/lib/ApiEndPoints"
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
 
 
 
@@ -31,6 +35,7 @@ const Activity = () => {
     const { user, authToken } = myAppHook();
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [postIdToDelete, setPostIdToDelete] = useState<number | null>(null);
+    const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
 
 
     const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
@@ -115,8 +120,55 @@ const Activity = () => {
         }
     };
 
+    // get saved post
+    useEffect(() => {
+        const fetchSavedPosts = async () => {
+            try {
+                const res = await axios.get(`${GET_PROFILE}`, {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                    withCredentials: true,
+                });
 
-    // console.log(user);
+                setSavedPosts(res.data.data.saved_posts
+                )
+
+            } catch (error) {
+                console.error("Error fetching saved posts", error);
+            }
+        };
+
+        if (authToken) {
+            fetchSavedPosts();
+        }
+    }, [authToken]);
+
+
+    const handleUnSavePost = async (id: number) => {
+        try {
+            await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
+                withCredentials: true,
+            });
+
+            await axios.delete(
+                `${SAVE_POST}/${id}/unsave`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                    withCredentials: true,
+                }
+            );
+
+            setSavedPosts(prevPosts => prevPosts.filter(post => post.id !== id));
+
+            toast.success('Post unsaved');
+
+        } catch (error) {
+            console.error('Unsave post failed:', error);
+        }
+    };
 
     return (
         <div>
@@ -145,7 +197,7 @@ const Activity = () => {
                         <Bookmark className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                         Saved Posts
                         <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs px-2 py-0.5 rounded-full ml-1">
-                            12
+                            {savedPosts.length}
                         </span>
                     </TabsTrigger>
                 </TabsList>
@@ -191,12 +243,12 @@ const Activity = () => {
                                             {/* Edit / Delete */}
                                             <div className="flex-3">
                                                 <div className="flex justify-end gap-4 pt-3">
-                                                        <Link href={`/post/${slug}/edit`}>
-                                                            <button className="flex items-center gap-1 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
-                                                                <Pencil className="w-4 h-4" />
-                                                                <span>Edit</span>
-                                                            </button>
-                                                        </Link>
+                                                    <Link href={`/post/${slug}/edit`}>
+                                                        <button className="flex items-center gap-1 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
+                                                            <Pencil className="w-4 h-4" />
+                                                            <span>Edit</span>
+                                                        </button>
+                                                    </Link>
                                                     <button onClick={() => handleDeleteClick(post.id)} className="flex items-center gap-1 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400">
                                                         <Trash2 className="w-4 h-4" />
                                                         <span>Delete</span>
@@ -256,32 +308,57 @@ const Activity = () => {
                     </div>
                 </TabsContent>
 
-
                 <TabsContent value="saved" className="mt-6">
                     <div className="grid gap-4 md:grid-cols-2">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="p-4 border rounded-xl hover:shadow-md transition-all 
-                    bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                            >
-                                <div className="flex justify-between items-start mb-3">
-                                    <h3 className="font-semibold dark:text-white">Saved Post {i + 1}</h3>
-                                    <Bookmark className="w-5 h-5 text-blue-500 dark:text-blue-400 fill-current" />
+
+                        {savedPosts.length === 0 ? (
+                            <div className="p-4 border rounded-xl hover:shadow-md transition-all 
+        bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                                <div className="text-center mb-3">
+                                    <h3 className="cursor-pointer font-semibold dark:text-white">No Saved Post</h3>
                                 </div>
-                                <p className="text-gray-600 dark:text-gray-300 text-sm">
-                                    This is content you saved for later reference...
-                                </p>
-                                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">Saved 3 days ago</span>
-                                    <button className="text-xs text-blue-500 dark:text-blue-400 hover:underline">
-                                        View Post
-                                    </button>
-                                </div>
+
                             </div>
-                        ))}
+                        ) : (
+                            savedPosts.map((post) => {
+                                const slug = slugify(post.title, { lower: true });
+
+                                return (
+                                    <div
+                                        key={post.id}
+                                        className="p-4 border rounded-xl hover:shadow-md transition-all 
+        bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <Link href={`/post/${slug}`}>
+                                                <h3 className="cursor-pointer font-semibold dark:text-white">{post.title}</h3>
+                                            </Link>
+                                            <Bookmark
+                                                onClick={() => handleUnSavePost(post.id)}
+                                                className="cursor-pointer w-5 h-5 text-blue-500 dark:text-blue-400 fill-current"
+                                            />
+                                        </div>
+                                        <p className="text-gray-600 dark:text-gray-300 text-sm">
+                                            {parse(trimWords(post.content, 9))}
+                                        </p>
+                                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                {formatToMonthDay(post.created_at)}
+                                            </span>
+                                            <Link href={`/post/${slug}`}>
+                                                <button className="cursor-pointer text-xs text-blue-500 dark:text-blue-400 hover:underline">
+                                                    View Post
+                                                </button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+
                     </div>
                 </TabsContent>
+
             </Tabs>
         </div>
     )

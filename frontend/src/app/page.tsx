@@ -130,6 +130,12 @@ export default function Home() {
 
   const handleSavePost = async (id: number) => {
     try {
+
+      if (!authToken) {
+        toast.error('Login to save');
+        return;
+      }
+
       await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
         withCredentials: true,
       });
@@ -417,6 +423,7 @@ export default function Home() {
 
                     {/* Meta Info */}
                     <div className="flex items-center justify-between mt-3 text-sm text-gray-500 dark:text-gray-400">
+
                       {/* Left Side: Meta Info */}
                       {/* Liked / Comment */}
                       <div className="flex gap-4 mt-2">
@@ -445,7 +452,7 @@ export default function Home() {
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                            d="M5 5a2 2 0 012-2h10a2 2 0 012  2v16l-7-3.5L5 21V5z"
                           />
                         </svg>
                       </button>
