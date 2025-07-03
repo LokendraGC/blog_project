@@ -8,4 +8,8 @@ export const EDIT_POST: string = API_URL + "/auth/post";
 
 export const SAVE_POST: string = API_URL + "/post";
 
+export const LIKE_POST: string = API_URL + "/post";
+
+export const GET_LIKED_POST: string = API_URL + "/auth";
+
 export const GET_PROFILE: string = API_URL + "/auth/profile";

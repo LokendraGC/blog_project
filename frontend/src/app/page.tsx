@@ -1,6 +1,6 @@
 'use client'
 import { myAppHook } from "@/context/AppProvider";
-import { SAVE_POST } from "@/lib/ApiEndPoints";
+import { GET_LIKED_POST, LIKE_POST, SAVE_POST } from "@/lib/ApiEndPoints";
 import axios from "axios";
 import parse from 'html-react-parser';
 import { Heart, MessageSquare } from "lucide-react";
@@ -51,6 +51,7 @@ export default function Home() {
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [tagPosts, setTagPosts] = useState<PostData[]>([]);
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set());
+  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
 
   const { tags } = myAppHook();
 
@@ -188,6 +189,51 @@ export default function Home() {
   };
 
 
+  // like post 
+  const handleToggleLike = async (postId: number) => {
+    if (!authToken) {
+      toast.error('Login to save');
+      return;
+    }
+
+    try {
+      await axios.get(`${APP_URL}/sanctum/csrf-cookie`, { withCredentials: true });
+
+      const isLiked = likedPosts.has(postId);
+
+      if (isLiked) {
+        await axios.post(`${LIKE_POST}/${postId}/unlike`, {}, {
+          headers: { Authorization: `Bearer ${authToken}` },
+          withCredentials: true,
+        });
+
+        setLikedPosts(prev => {
+          const updated = new Set(prev);
+          updated.delete(postId);
+          return updated;
+        });
+
+        toast.success('Post unliked');
+      } else {
+        await axios.post(`${LIKE_POST}/${postId}/like`, {}, {
+          headers: { Authorization: `Bearer ${authToken}` },
+          withCredentials: true,
+        });
+
+        setLikedPosts(prev => {
+          const updated = new Set(prev);
+          updated.add(postId);
+          return updated;
+        });
+
+        toast.success('Post liked');
+      }
+    } catch (error) {
+      console.error('Toggle like failed:', error);
+    }
+  };
+
+
   useEffect(() => {
     const fetchSavedPosts = async () => {
       try {
@@ -207,6 +253,43 @@ export default function Home() {
       fetchSavedPosts();
     }
   }, [authToken]);
+
+
+  useEffect(() => {
+    const fetchLikedPosts = async () => {
+      console.log(GET_LIKED_POST);
+      try {
+        console.log("Attempting to fetch liked posts with token:", authToken);
+
+        const res = await axios.get(`${GET_LIKED_POST}/get-liked-post`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+          withCredentials: true,
+        });
+
+        console.log("Response received:", res.data);
+        setLikedPosts(new Set(res.data.likedPostIds));
+
+      } catch (error: any) {
+        console.error("Error fetching liked posts", error);
+        if (error.response) {
+          console.error("Response data:", error.response.data);
+
+        } else if (error.request) {
+          console.error("No response received:", error.request);
+        } else {
+          console.error("Request setup error:", error.message);
+        }
+      }
+    }
+
+    if (authToken) {
+      fetchLikedPosts();
+    } else {
+      console.log("No auth token available");
+    }
+  }, [authToken])
 
   return (
     <>
@@ -427,9 +510,9 @@ export default function Home() {
                       {/* Left Side: Meta Info */}
                       {/* Liked / Comment */}
                       <div className="flex gap-4 mt-2">
-                        <button className="flex items-center gap-1 text-pink-500 dark:text-pink-400">
-                          <Heart className="w-4 h-4 fill-current" />
-                          <span>123</span>
+                        <button className="cursor-pointer flex items-center gap-1 text-pink-500 dark:text-pink-400">
+                          <Heart onClick={() => handleToggleLike(post.id)} className={`w-4 h-4 ${likedPosts.has(post.id) ? 'fill-current' : ''}`} />
+                          <span>{likedPosts.size}</span>
                         </button>
                         <button className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
                           <MessageSquare className="w-4 h-4" />

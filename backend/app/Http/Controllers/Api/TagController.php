@@ -26,7 +26,12 @@ class TagController extends Controller
     public function index()
     {
         try {
-            $posts = Tag::with(['user','posts'])->get();
+            $posts = Tag::with([
+                'user',
+                'posts' => function ($query) {
+                    $query->latest();
+                }
+            ])->get();
 
             return $this->response->successMessage(
                 ['data' => $posts],
@@ -68,7 +73,12 @@ class TagController extends Controller
     public function show(string $id)
     {
         try {
-            $tag = Tag::with(['user', 'posts'])->find($id);
+            $tag = Tag::with([
+                'user',
+                'posts' => function ($query) {
+                    $query->latest();
+                }
+            ])->find($id);
 
             if (!$tag) {
                 return $this->response->errorMessage(

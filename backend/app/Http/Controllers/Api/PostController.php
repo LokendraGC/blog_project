@@ -30,7 +30,7 @@ class PostController extends Controller
     public function index()
     {
         try {
-            $posts = Post::with(['user', 'tags'])->get();
+            $posts = Post::with(['user', 'tags'])->latest()->get();
 
             return $this->response->successMessage(
                 ['data' => $posts],
@@ -242,6 +242,10 @@ class PostController extends Controller
         try {
             $user = Auth::user();
             $savedPostIds = $user->savedPosts()->pluck('post_id')->toArray();
+            // $savedPostIds = $user->savedPosts()
+            //     ->orderBy('created_at', 'desc')
+            //     ->pluck('id')
+            //     ->toArray();
 
             return response()->json([
                 'savedPostIds' => $savedPostIds
@@ -269,11 +273,32 @@ class PostController extends Controller
 
         return response()->json(['message' => 'Post unliked']);
     }
+    public function getLikedPosts()
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // $liked_posts = $user->likedPosts()->pluck('id');
+        $liked_posts = $user->likedPosts()->pluck('post_id')->toArray();
+
+
+        return response()->json([
+            'likedPostIds' => $liked_posts,
+            'message' => 'Liked posts retrieved successfully'
+        ]);
+    }
 
     public function getCreatedPost()
     {
         $user = Auth::user();
-        $posts = Post::where('user_id', $user->id)->get();
+        // $posts = Post::where('user_id', $user->id)->get();
+
+        $posts = Post::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         try {
 
