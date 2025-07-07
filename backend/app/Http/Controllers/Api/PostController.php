@@ -261,9 +261,17 @@ class PostController extends Controller
     public function like(Post $post)
     {
         $user = Auth::user();
+
+        // Attach the like if not already liked
         $user->likedPosts()->syncWithoutDetaching([$post->id]);
 
-        return response()->json(['message' => 'Post liked']);
+        $post->loadCount('likedByUsers');
+
+        // Return the updated like count
+        return response()->json([
+            'message' => 'Post liked',
+            'like_count' => $post->likes_count // Using our accessor
+        ]);
     }
 
     public function unlike(Post $post)
@@ -271,8 +279,15 @@ class PostController extends Controller
         $user = Auth::user();
         $user->likedPosts()->detach($post->id);
 
-        return response()->json(['message' => 'Post unliked']);
+        $post->loadCount('likedByUsers');
+        
+        return response()->json([
+            'message' => 'Post unliked',
+            'like_count' => $post->likes_count // Using our accessor
+        ]);
     }
+
+
     public function getLikedPosts()
     {
         $user = Auth::user();

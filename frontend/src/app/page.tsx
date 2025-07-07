@@ -23,6 +23,7 @@ export default function Home() {
     feature_image?: string | null | undefined;
     short_description?: string;
     created_at: string;
+    likes_count: number;
     user: {
       id: number;
       name: string;
@@ -52,6 +53,8 @@ export default function Home() {
   const [tagPosts, setTagPosts] = useState<PostData[]>([]);
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set());
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+  const [postLikeCounts, setPostLikeCounts] = useState<Record<number, number>>({});
+
 
   const { tags } = myAppHook();
 
@@ -201,33 +204,37 @@ export default function Home() {
 
       const isLiked = likedPosts.has(postId);
 
-      if (isLiked) {
-        await axios.post(`${LIKE_POST}/${postId}/unlike`, {}, {
+      const response = isLiked
+        ? await axios.delete(`${LIKE_POST}/${postId}/unlike`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+          withCredentials: true,
+        })
+        : await axios.post(`${LIKE_POST}/${postId}/like`, {}, {
           headers: { Authorization: `Bearer ${authToken}` },
           withCredentials: true,
         });
 
-        setLikedPosts(prev => {
-          const updated = new Set(prev);
-          updated.delete(postId);
-          return updated;
-        });
+      // Update liked status
+      setLikedPosts(prev => {
+        const updated = new Set(prev);
+        isLiked ? updated.delete(postId) : updated.add(postId);
+        return updated;
+      });
 
-        toast.success('Post unliked');
-      } else {
-        await axios.post(`${LIKE_POST}/${postId}/like`, {}, {
-          headers: { Authorization: `Bearer ${authToken}` },
-          withCredentials: true,
-        });
+      // Update like count for the specific post
+      setPosts(prev => prev.map(post =>
+        post.id === postId
+          ? { ...post, likes_count: response.data.like_count }
+          : post
+      ));
 
-        setLikedPosts(prev => {
-          const updated = new Set(prev);
-          updated.add(postId);
-          return updated;
-        });
+      // If you're using postLikeCounts state, update it like this:
+      setPostLikeCounts(prev => ({
+        ...prev,
+        [postId]: response.data.like_count
+      }));
 
-        toast.success('Post liked');
-      }
+      toast.success(`Post ${isLiked ? 'unliked' : 'liked'}`);
     } catch (error) {
       console.error('Toggle like failed:', error);
     }
@@ -257,7 +264,6 @@ export default function Home() {
 
   useEffect(() => {
     const fetchLikedPosts = async () => {
-      console.log(GET_LIKED_POST);
       try {
         console.log("Attempting to fetch liked posts with token:", authToken);
 
@@ -290,6 +296,8 @@ export default function Home() {
       console.log("No auth token available");
     }
   }, [authToken])
+
+  // console.log(postLikeCounts);
 
   return (
     <>
@@ -385,7 +393,6 @@ export default function Home() {
                     {user?.name}
                     <div>
                       {formatToMonthDay(post.created_at)}
-
                     </div>
                   </div>
 
@@ -410,9 +417,12 @@ export default function Home() {
 
                     {/* Left Side: Meta Info */}
                     <div className="flex gap-4 mt-2">
-                      <button className="flex items-center gap-1 text-pink-500 dark:text-pink-400">
-                        <Heart className="w-4 h-4 fill-current" />
-                        <span>123</span>
+                      <button className="cursor-pointer flex items-center gap-1 text-pink-500 dark:text-pink-400">
+                        <Heart
+                          onClick={() => handleToggleLike(post.id)}
+                          className={`w-4 h-4 ${likedPosts.has(post.id) ? 'fill-current' : ''}`}
+                        />
+                       <span>{postLikeCounts[post.id] ?? post.likes_count}</span>
                       </button>
                       <button className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
                         <MessageSquare className="w-4 h-4" />
@@ -511,8 +521,11 @@ export default function Home() {
                       {/* Liked / Comment */}
                       <div className="flex gap-4 mt-2">
                         <button className="cursor-pointer flex items-center gap-1 text-pink-500 dark:text-pink-400">
-                          <Heart onClick={() => handleToggleLike(post.id)} className={`w-4 h-4 ${likedPosts.has(post.id) ? 'fill-current' : ''}`} />
-                          <span>{likedPosts.size}</span>
+                          <Heart
+                            onClick={() => handleToggleLike(post.id)}
+                            className={`w-4 h-4 ${likedPosts.has(post.id) ? 'fill-current' : ''}`}
+                          />
+                          <span>{postLikeCounts[post.id] ?? post.likes_count}</span>
                         </button>
                         <button className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
                           <MessageSquare className="w-4 h-4" />

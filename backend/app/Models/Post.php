@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Post extends Model
 {
     protected $fillable = ['title', 'short_description', 'feature_image', 'user_id', 'content'];
+    protected $appends = ['likes_count'];
 
     public function tags(): BelongsToMany
     {
@@ -35,5 +36,10 @@ class Post extends Model
     public function likedByUsers()
     {
         return $this->belongsToMany(User::class, 'post_user_likes')->withTimestamps();
+    }
+
+    public function getLikesCountAttribute()
+    {
+        return $this->likedByUsers()->count();
     }
 }
