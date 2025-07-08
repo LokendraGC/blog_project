@@ -83,32 +83,24 @@ class PostController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $slug)
     {
-        try {
+        $post = Post::with(['user', 'tags'])->where('slug', $slug)->first();
 
-
-            $post = Post::with(['user', 'tags'])->find($id);
-
-            if (!$post) {
-                return $this->response->errorMessage(
-                    message: 'Post not found',
-                    code: 404
-                );
-            }
-
-            return $this->response->successMessage(
-                ['data' => $post],
-                message: 'Post retrieved successfully',
-                code: 200
-            );
-        } catch (\Exception $err) {
-            return $this->response->successMessage(
-                message: 'Error retrieving post' . $err->getMessage(),
-                code: 501
+        if (!$post) {
+            return $this->response->errorMessage(
+                message: 'Post not found',
+                code: 404
             );
         }
+
+        return $this->response->successMessage(
+            ['data' => $post],
+            message: 'Post retrieved successfully',
+            code: 200
+        );
     }
+
 
     /**
      * Update the specified resource in storage.
@@ -280,7 +272,7 @@ class PostController extends Controller
         $user->likedPosts()->detach($post->id);
 
         $post->loadCount('likedByUsers');
-        
+
         return response()->json([
             'message' => 'Post unliked',
             'like_count' => $post->likes_count // Using our accessor

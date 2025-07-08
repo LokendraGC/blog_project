@@ -1,6 +1,5 @@
 import React from 'react'
 import ClientPost from './ClientPost'
-import Post from './post/[slug]/page';
 
 const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
 

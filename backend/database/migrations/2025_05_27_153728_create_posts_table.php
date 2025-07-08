@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             // $table->foreignId('tag_id')->constrained('tags')->onDelete('cascade');
-            $table->string('title',191);
-            $table->string('feature_image',200)->nullable();
-            $table->string('short_description',400)->nullable();
+            $table->string('title', 191);
+            $table->string('slug')->unique();
+            $table->string('feature_image', 200)->nullable();
+            $table->string('short_description', 400)->nullable();
             $table->text('content')->nullable();
             $table->timestamps();
         });
@@ -26,8 +27,10 @@ return new class extends Migration
     /**
      * Reverse the migrations.
      */
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('posts');
+        Schema::table('posts', function (Blueprint $table) {
+            $table->dropColumn('slug');
+        });
     }
 };
