@@ -28,8 +28,6 @@ interface UserData {
 
 export default function ClientPost({ posts }: ClientPostProps) {
 
-    console.log(posts);
-
     const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
     const { authToken, isLoading } = myAppHook();
     const [allPosts, setallPosts] = useState(posts);

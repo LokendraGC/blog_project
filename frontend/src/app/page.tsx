@@ -1,25 +1,6 @@
 import React from 'react'
 import ClientPost from './ClientPost'
-
-
-interface PostData {
-  id: number;
-  title: string;
-  content: string;
-  feature_image?: string | null | undefined;
-  short_description?: string;
-  created_at: string;
-  likes_count: number;
-  user: {
-    id: number;
-    name: string;
-    email: string;
-    avatar?: string | null | undefined;
-    username: string;
-    created_at: string | undefined;
-
-  }
-}
+import Post from './post/[slug]/page';
 
 const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
 
