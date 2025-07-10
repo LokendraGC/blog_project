@@ -72,7 +72,7 @@ export default function ClientPost({ posts }: ClientPostProps) {
 
             setTagPosts(response.data.data.data.posts);
             setUser(response.data.data.data.user);
-            console.log(user);
+            // console.log(user);
         } catch (error) {
             console.error('Error fetching tag posts:', error);
             setTagPosts([]); // Clear posts on error

@@ -2,13 +2,22 @@
 import React, { useEffect, useRef } from 'react'
 import parse from 'html-react-parser';
 import PostData from '@/types';
+import { formatDistanceToNow } from "date-fns";
+import Image from 'next/image';
+import { Heart, MessageCircle } from 'lucide-react';
 
 interface ClientPostProps {
     post: PostData;
 }
 
-const SinglePost = ({ post }: ClientPostProps) => {
+
+
+const SinglePost = ({ post, likedPostIds }: { post: PostData, likedPostIds: number[] }) => {
     const contentRef = useRef<HTMLDivElement>(null);
+    const AVATAR_URL = `${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/`;
+
+
+    console.log(post.user);
 
     useEffect(() => {
         if (!contentRef.current) return;
@@ -51,9 +60,39 @@ const SinglePost = ({ post }: ClientPostProps) => {
         <>
             {post ? (
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
                         {post.title}
                     </h1>
+
+                    <div className="mb-6 flex items-center justify-between flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-2">
+                            <Image
+                                width={24}
+                                height={24}
+                                src={
+                                    post.user.avatar && typeof post.user.avatar === 'string' && post.user.avatar.length > 0
+                                        ? AVATAR_URL + post.user.avatar
+                                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user?.name || 'U')}&background=random`
+                                }
+                                alt={post.user.name}
+                                className="rounded-full w-6 h-6"
+                            />
+                            <span>{post.user.name}</span>
+                            <p> {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</p>
+                        </div>
+                        <div className="flex items-center gap-4 text-gray-600 dark:text-gray-300 mr-5">
+                            <div className="flex items-center gap-1 cursor-pointer hover:text-red-500">
+                                <Heart className="w-4 h-4" />
+                                <span>12</span>
+                            </div>
+                            <div className="flex items-center gap-1 cursor-pointer hover:text-blue-500">
+                                <MessageCircle className="w-4 h-4" />
+                                <span>5</span>
+                            </div>
+                        </div>
+                    </div>
+
 
                     <div
                         ref={contentRef}
