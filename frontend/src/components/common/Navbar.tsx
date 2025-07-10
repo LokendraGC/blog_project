@@ -7,6 +7,7 @@ import { Button } from '../ui/button'
 import { Activity, Edit, Moon, Sun } from 'lucide-react'
 import { useTheme } from "next-themes";
 import Link from 'next/link'
+import { User as UserProfile } from '@/types';
 
 import {
     Dialog,
@@ -37,36 +38,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import axios from "axios"
 import toast from "react-hot-toast"
 import Image from 'next/image'
+import { useForm, SubmitHandler } from 'react-hook-form';
 
 
+interface formData {
+    name?: string;
+    email: string;
+    password: string;
+    password_confirmation?: string;
+}
 
 
 const Navbar: React.FC = () => {
 
     const { theme, setTheme } = useTheme();
-    const { user } = myAppHook();
-
 
     const toggleTheme = () => {
         setTheme(theme === "dark" ? "light" : "dark")
-    }
-
-
-    interface formData {
-        name?: string;
-        email: string;
-        password: string;
-        password_confirmation?: string;
-    }
-
-    interface UserProfile {
-        user: {
-            id: number;
-            name: string;
-            email: string;
-            avatar?: string;
-        };
-        avatar?: string;
     }
 
     const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
@@ -83,7 +71,9 @@ const Navbar: React.FC = () => {
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
     const router = useRouter();
-    const { login, register, authToken, isLoading, logout } = myAppHook()
+    const { login, authToken, logout, user, register } = myAppHook()
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -127,37 +117,12 @@ const Navbar: React.FC = () => {
         return () => clearTimeout(timer);
     }, [authToken, APP_URL]);
 
-    // console.log(userProfile);
-    // console.log(avatar);
 
     const handleChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
             ...formData,
             [event.target.name]: event.target.value,
         })
-    }
-
-    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
-        if (isLogin) {
-
-            try {
-                await login(formData.email, formData.password);
-            } catch (Error) {
-                console.log('Authentication error', Error);
-            }
-
-        } else {
-
-            try {
-                await register(formData.name ?? '', formData.email, formData.password, formData.password_confirmation ?? '');
-                toast.success('Register Successfull');
-
-            } catch (Error) {
-                console.log('Authentication error', Error);
-            }
-        }
     }
 
 
@@ -173,11 +138,31 @@ const Navbar: React.FC = () => {
         return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${avatarPath}`;
     };
 
+    const { register: formRegister, handleSubmit, formState: { errors } } = useForm<formData>();
 
-    const pathname = usePathname();
+    const onSubmit: SubmitHandler<formData> = async (data) => {
 
-    const isWritePage = pathname === '/write-post';
+        setIsLoading(true);
 
+        if (isLogin) {
+            try {
+                await login(data.email, data.password);
+            } catch (error) {
+                toast.error('Login failed. Please check your credentials.');
+            } finally {
+                setIsLoading(false);
+            }
+        } else {
+            try {
+                await register(data.name ?? '', data.email, data.password, data.password_confirmation ?? '');
+                setIsLogin(true);
+            } catch (error) {
+                toast.error('Registration failed. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    }
 
     return (
         <nav className="flex justify-between items-center p-4 sticky top-0 z-100 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -284,7 +269,7 @@ const Navbar: React.FC = () => {
                                     <Button className="cursor-pointer">Sign in</Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-[425px] z-[1000]">
-                                    <form onSubmit={handleFormSubmit}>
+                                    <form onSubmit={handleSubmit(onSubmit)}>
                                         <DialogHeader className="my-5">
                                             <DialogTitle>{isLogin ? 'Sign In' : 'Register'}</DialogTitle>
                                             <DialogDescription>
@@ -299,10 +284,12 @@ const Navbar: React.FC = () => {
                                                     <Input
                                                         id="name"
                                                         type="text"
-                                                        name="name"
-                                                        value={formData.name}
-                                                        onChange={handleChangeInput}
+                                                        // name="name"
+                                                        {...formRegister('name', { required: 'Name is required' })}
+                                                    // value={formData.name}
+                                                    // onChange={handleChangeInput}
                                                     />
+                                                    {errors.name && <p className='text-red-500'>{errors.name.message}</p>}
                                                 </div>
                                             )}
 
@@ -311,20 +298,21 @@ const Navbar: React.FC = () => {
                                                 <Input
                                                     id="email"
                                                     type="email"
-                                                    name="email"
-                                                    value={formData.email}
-                                                    onChange={handleChangeInput}
+                                                    {...formRegister('email', { required: 'Email is required' })}
+                                                // name="email"
+                                                // value={formData.email}
+                                                // onChange={handleChangeInput}
                                                 />
+                                                {errors.email && <p className='text-red-500'>{errors.email.message}</p>}
                                             </div>
                                             <div className="grid gap-3">
                                                 <Label htmlFor="password">Password</Label>
                                                 <Input
                                                     id="password"
                                                     type="password"
-                                                    name="password"
-                                                    value={formData.password}
-                                                    onChange={handleChangeInput}
+                                                    {...formRegister('password', { required: 'Password is required' })}
                                                 />
+                                                {errors.password && <p className='text-red-500'>{errors.password.message}</p>}
                                             </div>
 
                                             {!isLogin && (
@@ -333,22 +321,25 @@ const Navbar: React.FC = () => {
                                                     <Input
                                                         id="password_confirmation"
                                                         type="password"
-                                                        name="password_confirmation"
-                                                        value={formData.password_confirmation}
-                                                        onChange={handleChangeInput}
+                                                        {...formRegister('password_confirmation', { required: 'Confirm Password is required' })}
                                                     />
+                                                    {errors.password_confirmation && <p className='text-red-500'>{errors.password_confirmation.message}</p>}
                                                 </div>
                                             )}
                                         </div>
 
                                         <DialogDescription className="my-5">
                                             {isLogin ? 'Already have an account?' : "Don't have an account?"}{' '}
-                                            <span
-                                                onClick={() => setIsLogin(!isLogin)}
-                                                className="cursor-pointer text-blue-600 hover:underline"
-                                            >
-                                                {isLogin ? 'Register' : 'Sign In'}
-                                            </span>
+
+                                            {
+                                                <span
+                                                    onClick={() => setIsLogin(!isLogin)}
+                                                    className="cursor-pointer text-blue-600 hover:underline"
+                                                >
+                                                    {isLogin ? 'Register' : 'Sign In'}
+                                                </span>
+
+                                            }
                                         </DialogDescription>
 
                                         <DialogFooter>
@@ -357,8 +348,27 @@ const Navbar: React.FC = () => {
                                                     Cancel
                                                 </Button>
                                             </DialogClose>
-                                            <Button className="cursor-pointer" type="submit">
-                                                {isLogin ? 'Sign In' : 'Create Account'}
+                                            <Button
+                                                className={`cursor-pointer ${isLoading ? 'opacity-75' : ''}`}
+                                                type="submit"
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading ? (
+                                                    <span className="flex items-center justify-center">
+                                                        <svg
+                                                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                        {isLogin ? 'Signing In...' : 'Creating Account...'}
+                                                    </span>
+                                                ) : (
+                                                    isLogin ? 'Sign In' : 'Create Account'
+                                                )}
                                             </Button>
                                         </DialogFooter>
                                     </form>

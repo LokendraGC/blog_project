@@ -1,5 +1,3 @@
-// app/change-password/page.tsx or wherever your page is
-
 "use client"
 
 import { Label } from "@/components/ui/label"
@@ -14,23 +12,12 @@ import toast from "react-hot-toast"
 import { useRouter } from "next/navigation";
 import axios from "axios"
 import Link from "next/link"
-
+import { User as UserProfile } from "@/types"
 
 interface formData {
   current_password: string
   new_password: string
   new_password_confirmation: string
-}
-
-interface UserProfile {
-  user: {
-    id: number;
-    name: string;
-    email: string;
-    username?: string;
-    avatar?: string;
-  };
-  avatar?: string;
 }
 
 const ChangePassword = () => {
@@ -154,11 +141,6 @@ const ChangePassword = () => {
   }, [authToken, APP_URL]);
 
 
-  // const getAvatarUrl = (avatarPath: string | null | undefined) => {
-  //   if (!avatarPath) return '/default-avatar.png';
-  //   return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${avatarPath}`;
-  // };
-
   const getAvatarUrl = (avatarPath: string | null | undefined) => {
     if (!avatarPath) return null;
 
@@ -214,8 +196,6 @@ const ChangePassword = () => {
 
 
           <div>
-            {/* <Label className="text-muted-foreground">Change Password</Label> */}
-
             <form onSubmit={handleFormSubmit}>
               <div className="grid grid-cols-3 gap-4">
 

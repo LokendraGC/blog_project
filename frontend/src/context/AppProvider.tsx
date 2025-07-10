@@ -5,45 +5,9 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import Cookies from 'js-cookie';
 import { useRouter } from "next/navigation";
-
-
-interface User {
-    user: {
-        id: number
-        name: string | null
-        email: string
-        avatar?: string
-    }
-    avatar?: string
-}
-
-interface TagData {
-    id: number;
-    tag_name: string;
-    short_description: string;
-    image: string;
-    user_id?: number;
-}
-
-
-interface PostData {
-    id: number;
-    title: string;
-    content: string;
-    feature_image?: string | null | undefined;
-    short_description?: string;
-    created_at: string | Date;
-    user: {
-        id: number;
-        name: string;
-        email: string;
-        avatar?: string | null | undefined;
-        username: string;
-        created_at: string | undefined;
-
-    }
-    tags?: { id: string }[];
-}
+import { User } from "@/types";
+import PostData from "@/types";
+import { TagData } from "@/types";
 
 interface AppProviderType {
     updateProfile: (name: string, email: string, username: string, avatar: File | string | null) => Promise<void>
@@ -164,7 +128,6 @@ export default function AppProvider({
 
     // for login
     const login = async (email: string, password: string) => {
-        setIsLoading(true);
         try {
             // 1. Get CSRF cookie first
             await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
@@ -175,7 +138,7 @@ export default function AppProvider({
             const response = await axios.post(
                 `${APP_URL}/api/auth/login`,
                 { email, password },
-                { withCredentials: true } // Add this
+                { withCredentials: true } 
             );
 
             if (response.data.status === 'success') {
@@ -193,9 +156,7 @@ export default function AppProvider({
             console.log('Unknown error', error);
             toast.error('Invalid Credentials');
 
-        } finally {
-            setIsLoading(false);
-        }
+        } 
     };
 
 
@@ -254,6 +215,8 @@ export default function AppProvider({
                 password,
                 password_confirmation
             });
+
+            toast.success('Registration successful! You can now log in.');
 
         } catch (error: any) {
             if (error.response) {
@@ -367,7 +330,7 @@ export default function AppProvider({
 
     return (
         <AppContext.Provider value={{ tags, posts, updateProfile, user, login, logout, register, isLoading, authToken, changePassword }}>
-            {isLoading ? <Loader /> : children}
+            {children}
         </AppContext.Provider>
     );
 }

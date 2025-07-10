@@ -1,5 +1,5 @@
 import React from 'react'
-import ClientPost from './ClientPost'
+import ClientPost from '../components/ClientPost'
 
 const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
 
@@ -13,7 +13,7 @@ async function fetchPosts() {
 
 
 const Home = async () => {
-
+  
   const posts = await fetchPosts();
   // console.log(posts.data.data);
 

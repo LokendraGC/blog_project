@@ -19,12 +19,23 @@ export default interface PostData {
 }
 
 
+export interface User {
+    user: {
+        id: number;
+        name: string | null;
+        email: string;
+        username: string;
+        avatar?: string;
+    };
+    avatar?: string;
+}
 
-interface UserData {
+
+
+export interface TagData {
     id: number;
-    name: string;
-    email: string;
-    avatar?: string | null | undefined;
-    username: string;
-    created_at: string;
+    tag_name: string;
+    short_description: string;
+    image: string;
+    user_id?: number;
 }

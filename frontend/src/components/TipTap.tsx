@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import toast from 'react-hot-toast'
 import Image from 'next/image'
-import { PostData } from '@/types'
+import PostData from '@/types'
 import { EDIT_POST } from '@/lib/ApiEndPoints'
 
 

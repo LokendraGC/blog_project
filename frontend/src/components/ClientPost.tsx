@@ -178,7 +178,7 @@ export default function ClientPost({ posts }: ClientPostProps) {
     // like post 
     const handleToggleLike = async (postId: number) => {
         if (!authToken) {
-            toast.error('Login to save');
+            toast.error('Login to Like');
             return;
         }
 
