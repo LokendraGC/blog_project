@@ -13,11 +13,6 @@ import slugify from "slugify"
 import Link from "next/link"
 import toast from "react-hot-toast"
 import { GET_PROFILE, SAVE_POST } from "@/lib/ApiEndPoints"
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-dayjs.extend(relativeTime);
-
-
 
 interface PostData {
     id: number

@@ -1,10 +1,13 @@
 'use client'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import parse from 'html-react-parser';
 import PostData from '@/types';
 import { formatDistanceToNow } from "date-fns";
 import Image from 'next/image';
 import { Heart, MessageCircle } from 'lucide-react';
+import axios from 'axios';
+import { GET_LIKED_POST, LIKE_POST } from '@/lib/ApiEndPoints';
+import { myAppHook } from '@/context/AppProvider';
 
 interface ClientPostProps {
     post: PostData;
@@ -12,12 +15,12 @@ interface ClientPostProps {
 
 
 
-const SinglePost = ({ post, likedPostIds }: { post: PostData, likedPostIds: number[] }) => {
+const SinglePost = ({ post }: ClientPostProps) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const AVATAR_URL = `${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/`;
-
-
-    console.log(post.user);
+    const [likedPostIds, setLikedPosts] = useState<Set<number>>(new Set());
+    const [liked, setLiked] = useState(false);
+    const { authToken } = myAppHook();
 
     useEffect(() => {
         if (!contentRef.current) return;
@@ -55,6 +58,45 @@ const SinglePost = ({ post, likedPostIds }: { post: PostData, likedPostIds: numb
             }
         });
     }, []); // Re-run when posts load
+
+    // get liked post 
+    useEffect(() => {
+        const fetchLikedPosts = async () => {
+            try {
+                console.log("Attempting to fetch liked posts with token:", authToken);
+
+                const res = await axios.get(`${GET_LIKED_POST}/get-liked-post`, {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                    withCredentials: true,
+                });
+
+                setLikedPosts(new Set(res.data.likedPostIds));
+
+
+            } catch (error: any) {
+                console.error("Error fetching liked posts", error);
+                if (error.response) {
+                    console.error("Response data:", error.response.data);
+
+                } else if (error.request) {
+                    console.error("No response received:", error.request);
+                } else {
+                    console.error("Request setup error:", error.message);
+                }
+            }
+        }
+
+        if (authToken) {
+            fetchLikedPosts();
+        } else {
+            console.log("No auth token available");
+        }
+    }, [authToken])
+
+    console.log(likedPostIds);
+
 
     return (
         <>
