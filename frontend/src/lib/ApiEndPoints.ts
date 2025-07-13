@@ -13,3 +13,7 @@ export const LIKE_POST: string = API_URL + "/post";
 export const GET_LIKED_POST: string = API_URL + "/auth";
 
 export const GET_PROFILE: string = API_URL + "/auth/profile";
+
+export const COMMENT_END_POINT: string = API_URL + "/auth/comment/";
+
+export const GET_COMMENT: string = API_URL + "/auth/get-comment";

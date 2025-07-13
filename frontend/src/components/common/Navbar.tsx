@@ -72,20 +72,20 @@ const Navbar: React.FC = () => {
 
     const router = useRouter();
     const { login, authToken, logout, user, register } = myAppHook()
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isAuthChecking, setIsAuthChecking] = useState<boolean>(false);
 
 
     useEffect(() => {
         const fetchProfile = async () => {
-            if (!authToken) return;
-
             try {
-                // 1. Ensure CSRF cookie is set
+                if (!authToken) {
+                    return;
+                }
+
                 await axios.get(`${APP_URL}/sanctum/csrf-cookie`, {
                     withCredentials: true,
                 });
 
-                // 2. Make authenticated request with token
                 const response = await axios.get(`${APP_URL}/api/auth/profile`, {
                     withCredentials: true,
                     headers: {
@@ -94,27 +94,28 @@ const Navbar: React.FC = () => {
                     }
                 });
 
-                // console.log(response.data.data.user.name);
                 setUserProfile(response.data.data);
-                setAvatar(response.data.avatar || response.data.user?.avatar || null);
+                setAvatar(response.data.avatar || response.data.data?.user?.avatar || null);
+
             } catch (error) {
                 if (axios.isAxiosError(error)) {
-
                     console.error('Profile fetch error:', {
                         status: error.response?.status,
                         data: error.response?.data,
                         headers: error.response?.headers
                     });
+                } else {
+                    console.error('An unexpected error occurred:', error);
                 }
             }
         };
 
-        // Add small delay to ensure CSRF cookie is set
         const timer = setTimeout(() => {
             fetchProfile();
         }, 100);
 
         return () => clearTimeout(timer);
+
     }, [authToken, APP_URL]);
 
 
@@ -142,7 +143,7 @@ const Navbar: React.FC = () => {
 
     const onSubmit: SubmitHandler<formData> = async (data) => {
 
-        setIsLoading(true);
+        setIsAuthChecking(true);
 
         if (isLogin) {
             try {
@@ -150,7 +151,7 @@ const Navbar: React.FC = () => {
             } catch (error) {
                 toast.error('Login failed. Please check your credentials.');
             } finally {
-                setIsLoading(false);
+                setIsAuthChecking(false);
             }
         } else {
             try {
@@ -159,10 +160,15 @@ const Navbar: React.FC = () => {
             } catch (error) {
                 toast.error('Registration failed. Please try again.');
             } finally {
-                setIsLoading(false);
+                setIsAuthChecking(false);
             }
         }
     }
+
+      if( !authToken ){
+        return <div className='text-center'>loading..</div>
+    }
+
 
     return (
         <nav className="flex justify-between items-center p-4 sticky top-0 z-100 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -347,11 +353,11 @@ const Navbar: React.FC = () => {
                                                 </Button>
                                             </DialogClose>
                                             <Button
-                                                className={`cursor-pointer ${isLoading ? 'opacity-75' : ''}`}
+                                                className={`cursor-pointer ${isAuthChecking ? 'opacity-75' : ''}`}
                                                 type="submit"
-                                                disabled={isLoading}
+                                                disabled={isAuthChecking}
                                             >
-                                                {isLoading ? (
+                                                {isAuthChecking ? (
                                                     <span className="flex items-center justify-center">
                                                         <svg
                                                             className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"

@@ -136,4 +136,25 @@ class CommentController extends Controller
             );
         }
     }
+
+    public function getCommentsByPost($postId)
+    {
+        try {
+            $comments = Comment::with('user')
+                ->where('post_id', $postId)
+                ->latest()
+                ->get();
+
+            return $this->response->successMessage(
+                ['data' => $comments],
+                message: 'Comments for the post fetched successfully',
+                code: 200
+            );
+        } catch (\Exception $err) {
+            return $this->response->errorMessage(
+                message: "Error fetching comments: " . $err->getMessage(),
+                code: 500
+            );
+        }
+    }
 }
