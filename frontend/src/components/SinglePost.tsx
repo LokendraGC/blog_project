@@ -8,6 +8,8 @@ import { Heart, MessageCircle } from 'lucide-react';
 import axios from 'axios';
 import { GET_LIKED_POST, LIKE_POST } from '@/lib/ApiEndPoints';
 import { myAppHook } from '@/context/AppProvider';
+import toast from 'react-hot-toast';
+import CommentSection from './CommentSection';
 
 interface ClientPostProps {
     post: PostData;
@@ -20,6 +22,8 @@ const SinglePost = ({ post }: ClientPostProps) => {
     const AVATAR_URL = `${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/`;
     const [likedPostIds, setLikedPosts] = useState<Set<number>>(new Set());
     const [liked, setLiked] = useState(false);
+    const [postLikeCounts, setPostLikeCounts] = useState<Record<number, number>>({});
+    const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
     const { authToken } = myAppHook();
 
     useEffect(() => {
@@ -95,8 +99,56 @@ const SinglePost = ({ post }: ClientPostProps) => {
         }
     }, [authToken])
 
-    console.log(likedPostIds);
+    // handle like post
+    const handleToggleLike = async (postId: number) => {
 
+        if (!authToken) {
+            toast.error("Please login to like a post");
+            return;
+        }
+
+        try {
+
+            await axios.get(`${APP_URL}/sanctum/csrf-cookie`, { withCredentials: true });
+
+            const isLiked = likedPostIds.has(postId);
+
+            const response = isLiked ?
+                await axios.delete(`${LIKE_POST}/${postId}/unlike`, {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                    withCredentials: true,
+                }) :
+                await axios.post(`${LIKE_POST}/${postId}/like`, {}, {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                    withCredentials: true,
+                });
+
+            setLikedPosts(prev => {
+                const updated = new Set(prev);
+                isLiked ? updated.delete(postId) : updated.add(postId);
+                return updated;
+            });
+
+            setPostLikeCounts(prev => ({
+                ...prev,
+                [postId]: (prev[postId] ?? 0) + (isLiked ? -1 : 1),
+            }));
+
+
+            toast.success(`Post ${isLiked ? 'unliked' : 'liked'}`);
+            console.log(response);
+
+            console.log(isLiked, "isLiked");
+        }
+
+        catch (error) {
+            console.log(error);
+        }
+    }
 
     return (
         <>
@@ -124,10 +176,20 @@ const SinglePost = ({ post }: ClientPostProps) => {
                             <p> {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</p>
                         </div>
                         <div className="flex items-center gap-4 text-gray-600 dark:text-gray-300 mr-5">
-                            <div className="flex items-center gap-1 cursor-pointer hover:text-red-500">
-                                <Heart className="w-4 h-4" />
-                                <span>12</span>
+                            <div
+                                className={`flex items-center gap-1 cursor-pointer ${likedPostIds.has(post.id) ? 'text-red-500' : 'text-gray-400'
+                                    }`}
+                                onClick={() => handleToggleLike(post.id)}
+                            >
+                                <Heart
+                                    className="w-4 h-4 fill-current"
+                                    fill={likedPostIds.has(post.id) ? 'currentColor' : 'none'}
+                                    strokeWidth={likedPostIds.has(post.id) ? 0 : 2}
+                                />
+                                <span>{postLikeCounts[post.id] ?? post.likes_count ?? 0}
+                                </span>
                             </div>
+
                             <div className="flex items-center gap-1 cursor-pointer hover:text-blue-500">
                                 <MessageCircle className="w-4 h-4" />
                                 <span>5</span>
@@ -162,6 +224,8 @@ const SinglePost = ({ post }: ClientPostProps) => {
                     >
                         {parse(post.content)}
                     </div>
+
+                    <CommentSection postID={post.id} />
 
                 </div>
             ) : (

@@ -13,9 +13,9 @@ async function fetchPostBySlug(slug: string) {
 }
 
 export default async function Post({ params }: { params: { slug: string } }) {
-    const post = await fetchPostBySlug(params.slug);
+    const { slug } = await params;
+    const post = await fetchPostBySlug(slug);
 
-    // console.log(likePostIds.likedPostIds);
 
     return <SinglePost post={post.data} />;
 }

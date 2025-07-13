@@ -7,7 +7,6 @@ use App\Http\Requests\comments\RequestComment;
 use App\Http\Requests\comments\RequestCommentUpdate;
 use App\Models\Comment;
 use App\Services\ResponseService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
@@ -26,6 +25,7 @@ class CommentController extends Controller
     {
         try {
             $comments = Comment::with('user')->latest()->get();
+
             return $this->response->successMessage(
                 ['data' => $comments],
                 message: 'Comments fetched Successfully',
@@ -46,13 +46,13 @@ class CommentController extends Controller
     {
         try {
             $payload = $request->validated();
-
             $payload['user_id'] = Auth::id();
 
-            Comment::create($payload);
+            $comment = Comment::create($payload);
 
             return $this->response->successMessage(
-                message: 'Comment Addes Successfully',
+                ['data' => $comment->load('user')],
+                message: 'Comment added successfully',
                 code: 201
             );
         } catch (\Exception $err) {

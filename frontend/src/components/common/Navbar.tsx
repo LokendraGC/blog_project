@@ -286,8 +286,6 @@ const Navbar: React.FC = () => {
                                                         type="text"
                                                         // name="name"
                                                         {...formRegister('name', { required: 'Name is required' })}
-                                                    // value={formData.name}
-                                                    // onChange={handleChangeInput}
                                                     />
                                                     {errors.name && <p className='text-red-500'>{errors.name.message}</p>}
                                                 </div>

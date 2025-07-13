@@ -39,3 +39,15 @@ export interface TagData {
     image: string;
     user_id?: number;
 }
+
+
+
+export interface Comment {
+    id: number;
+    post_id: number;
+    user_id: number;
+    body: string;
+    created_at: string;
+    updated_at: string;
+    user: User;
+}
