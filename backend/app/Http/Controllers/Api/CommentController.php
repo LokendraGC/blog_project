@@ -145,8 +145,13 @@ class CommentController extends Controller
                 ->latest()
                 ->get();
 
+            $commentCount = $comments->count();
+
             return $this->response->successMessage(
-                ['data' => $comments],
+                [
+                    'data' => $comments,
+                    'count' => $commentCount
+                ],
                 message: 'Comments for the post fetched successfully',
                 code: 200
             );

@@ -30,7 +30,7 @@
             Route::get('get-liked-post', [PostController::class, 'getLikedPosts']);
             Route::apiResource('post', PostController::class)->except(['index', 'show']);
             Route::apiResource('comment', CommentController::class)->except(['index', 'show']);
-            Route::apiResource('tag', TagController::class)->except(['index', 'show']);
+            Route::apiResource('tag', TagController::class)->except(['index', 'show']); 
         });
 
         Route::apiResource('post', PostController::class)->only(['index', 'show']);

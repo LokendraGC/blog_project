@@ -49,5 +49,13 @@ export interface Comment {
     body: string;
     created_at: string;
     updated_at: string;
-    user: User;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        username: string;
+        avatar?: string;
+    };
+    avatar?: string;
+
 }

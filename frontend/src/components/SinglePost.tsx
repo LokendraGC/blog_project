@@ -6,7 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import Image from 'next/image';
 import { Heart, MessageCircle } from 'lucide-react';
 import axios from 'axios';
-import { GET_LIKED_POST, LIKE_POST } from '@/lib/ApiEndPoints';
+import { GET_COMMENT, GET_LIKED_POST, LIKE_POST } from '@/lib/ApiEndPoints';
 import { myAppHook } from '@/context/AppProvider';
 import toast from 'react-hot-toast';
 import CommentSection from './CommentSection';
@@ -25,6 +25,8 @@ const SinglePost = ({ post }: ClientPostProps) => {
     const [postLikeCounts, setPostLikeCounts] = useState<Record<number, number>>({});
     const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
     const { authToken } = myAppHook();
+    const [countComments, setCountComments] = useState<number | null>(null);
+
 
     useEffect(() => {
         if (!contentRef.current) return;
@@ -150,6 +152,27 @@ const SinglePost = ({ post }: ClientPostProps) => {
         }
     }
 
+
+    const fetchComments = async () => {
+        try {
+            const response = await axios.get(`${GET_COMMENT}/${post.id}`, {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                },
+                withCredentials: true,
+            })
+            setCountComments(response.data.data.count);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+
+    useEffect(() => {
+        if (!authToken || !post.id) return;
+        fetchComments();
+    }, [post.id]);
+
     return (
         <>
             {post ? (
@@ -190,9 +213,26 @@ const SinglePost = ({ post }: ClientPostProps) => {
                                 </span>
                             </div>
 
-                            <div className="flex items-center gap-1 cursor-pointer hover:text-blue-500">
+                            <div className="flex items-center gap-1 cursor-pointer hover:text-blue-500"
+                                onClick={() => {
+                                    const commentElement = document.getElementById('comment');
+                                    if (commentElement) {
+                                        const topOffset = commentElement.getBoundingClientRect().top + window.scrollY - 100; // adjust -100 as needed
+
+                                        window.scrollTo({
+                                            top: topOffset,
+                                            behavior: 'smooth',
+                                        });
+
+                                        setTimeout(() => {
+                                            commentElement.focus();
+                                        }, 500);
+                                    }
+                                }}
+
+                            >
                                 <MessageCircle className="w-4 h-4" />
-                                <span>5</span>
+                                <span>{countComments ?? 0}</span>
                             </div>
                         </div>
                     </div>

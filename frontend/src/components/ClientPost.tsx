@@ -379,8 +379,6 @@ export default function ClientPost({ posts }: ClientPostProps) {
                                         </div>
                                     </div>
 
-
-
                                     {/* Title */}
 
                                     <Link href={`/post/${slug}`}>
@@ -407,10 +405,13 @@ export default function ClientPost({ posts }: ClientPostProps) {
                                                 />
                                                 <span>{postLikeCounts[post.id] ?? post.likes_count}</span>
                                             </button>
-                                            <button className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
-                                                <MessageSquare className="w-4 h-4" />
-                                                <span>Comment</span>
-                                            </button>
+
+                                            <Link href={`/post/${slug}`}>
+                                                <button className="flex items-center cursor-pointer gap-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
+                                                    <MessageSquare className="w-4 h-4" />
+                                                    <span>Comment</span>
+                                                </button>
+                                            </Link>
                                         </div>
 
 
@@ -510,10 +511,14 @@ export default function ClientPost({ posts }: ClientPostProps) {
                                                     />
                                                     <span>{postLikeCounts[post.id] ?? post.likes_count}</span>
                                                 </button>
-                                                <button className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
-                                                    <MessageSquare className="w-4 h-4" />
-                                                    <span>Comment</span>
-                                                </button>
+
+                                                <Link href={`/post/${slug}`}>
+                                                    <button className="flex items-center cursor-pointer gap-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
+                                                        <MessageSquare className="w-4 h-4" />
+                                                        <span>Comment</span>
+                                                    </button>
+                                                </Link>
+
                                             </div>
 
 

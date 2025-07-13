@@ -192,16 +192,6 @@ const TipTap = ({ post, onUpdate }: TipTapProps) => {
                 toast.loading('Uploading image...');
 
                 try {
-                    // Create preview while uploading
-                    // const reader = new FileReader();
-                    // reader.onload = (e) => {
-                    //     const base64 = e.target?.result as string;
-                    //     editor?.chain().focus().setImage({ src: base64 }).run();
-                    //     toast.dismiss();
-                    //     toast.success('Image added');
-                    // };
-                    // reader.readAsDataURL(file);
-
                     const imageUrl = await uploadToCloudinary(file);
 
                     editor?.chain().focus().setImage({ src: imageUrl }).run();
