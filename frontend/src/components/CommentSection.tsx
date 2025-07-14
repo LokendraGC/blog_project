@@ -21,15 +21,13 @@ interface CommentSectionProps {
 const CommentSection = ({ postID }: CommentSectionProps) => {
 
     const AVATAR_URL = `${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/`;
-    const { authToken } = myAppHook();
+    const { authToken, user } = myAppHook();
     const [comments, setComments] = useState<Comment[]>([]);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [postIdToDelete, setPostIdToDelete] = useState<number | null>(null);
     const [editComment, setEditComment] = useState(false);
     const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
     const { register, handleSubmit, formState: { errors }, reset } = useForm<CommentFormData>();
-
-
 
     const onSubmit: SubmitHandler<CommentFormData> = async (data) => {
 
@@ -151,9 +149,6 @@ const CommentSection = ({ postID }: CommentSectionProps) => {
             console.error("Error editing comment:", error);
             toast.error("Failed to edit comment");
         }
-
-
-
     }
 
     return (
@@ -201,35 +196,43 @@ const CommentSection = ({ postID }: CommentSectionProps) => {
                                 <p className="text-gray-700 dark:text-white ml-[34px]">{comment.body}</p>
 
                                 {/* Action Icons */}
-                                <div className="absolute top-2 right-2 flex space-x-2">
-                                    <Pencil className="h-5 w-5 text-blue-500 cursor-pointer hover:text-blue-700" onClick={() => handleEditComment(comment.id)} />
-                                    <TrashIcon onClick={() => handleDeleteComment(comment.id)} className="h-5 w-5 text-red-500 cursor-pointer hover:text-red-700" />
+                                {comment.user.id === user?.user.id && (
+                                    <div className="absolute top-2 right-2 flex space-x-2">
+                                        <Pencil
+                                            className="h-5 w-5 text-blue-500 cursor-pointer hover:text-blue-700"
+                                            onClick={() => handleEditComment(comment.id)}
+                                        />
+                                        <TrashIcon
+                                            onClick={() => handleDeleteComment(comment.id)}
+                                            className="h-5 w-5 text-red-500 cursor-pointer hover:text-red-700"
+                                        />
+                                    </div>
+                                )}
 
-                                    {
-                                        showConfirmModal && (
-                                            <div className="fixed inset-0 z-5 flex items-center justify-center bg-transparent bg-opacity-50">
-                                                <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
-                                                    <h2 className="text-lg font-semibold mb-4 text-gray-800">Confirm Deletion</h2>
-                                                    <p className="text-gray-600 mb-6">Are you sure you want to delete this post? This action cannot be undone.</p>
-                                                    <div className="flex justify-end space-x-3">
-                                                        <button
-                                                            onClick={() => setShowConfirmModal(false)}
-                                                            className="cursor-pointer px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                        <button
-                                                            onClick={confirmDelete}
-                                                            className="cursor-pointer px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
+                                {
+                                    showConfirmModal && (
+                                        <div className="fixed inset-0 z-5 flex items-center justify-center bg-transparent bg-opacity-50">
+                                            <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+                                                <h2 className="text-lg font-semibold mb-4 text-gray-800">Confirm Deletion</h2>
+                                                <p className="text-gray-600 mb-6">Are you sure you want to delete this post? This action cannot be undone.</p>
+                                                <div className="flex justify-end space-x-3">
+                                                    <button
+                                                        onClick={() => setShowConfirmModal(false)}
+                                                        className="cursor-pointer px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        onClick={confirmDelete}
+                                                        className="cursor-pointer px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                                                    >
+                                                        Delete
+                                                    </button>
                                                 </div>
                                             </div>
-                                        )
-                                    }
-                                </div>
+                                        </div>
+                                    )
+                                }
                             </div>
                         )) : (
                             <div className="p-4 border rounded-md shadow-sm relative">
@@ -240,7 +243,7 @@ const CommentSection = ({ postID }: CommentSectionProps) => {
                 </div>
             </div>
 
-        </div>
+        </div >
     )
 }
 

@@ -49,6 +49,8 @@ const EditProfile = () => {
             // Set preview if avatar exists
             if (user.avatar) {
                 setPreviewImage(`${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${user.avatar}`);
+            } else {
+                setPreviewImage(null);
             }
 
         }
@@ -122,25 +124,33 @@ const EditProfile = () => {
         }
     };
 
-    // const getAvatarUrl = (avatarPath: string | null | undefined) => {
-    //     if (!avatarPath) return '/default-avatar.png';
+
+    //     const getAvatarUrl = (avatarPath: string | null | undefined) => {
+
+    //     if (previewImage) return previewImage;
+
+    //     if (!avatarPath) return null;
+
+    //     if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) {
+    //         return avatarPath;
+    //     }
+
+    //     // 4. Otherwise, it's a stored avatar - return full path
     //     return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${avatarPath}`;
     // };
 
-    const getAvatarUrl = (avatarPath: string | null | undefined) => {
-        // 1. Always show preview if it exists (highest priority)
+    const getAvatarUrl = () => {
         if (previewImage) return previewImage;
 
-        // 2. If no avatar exists, return null (will use default)
-        if (!avatarPath) return null;
+        if (user?.avatar) {
+            if (user.avatar.startsWith('data:image')) {
+                return user.avatar;
+            }
 
-        // 3. If it's a generated avatar URL (http/https) or data URL, return as-is
-        if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) {
-            return avatarPath;
+            return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${user.avatar}`;
         }
 
-        // 4. Otherwise, it's a stored avatar - return full path
-        return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${avatarPath}`;
+        return `https://ui-avatars.com/api/?name=${user?.user.name || 'User'}&background=random`;
     };
 
 
@@ -150,13 +160,15 @@ const EditProfile = () => {
             <Card className="w-80 p-6 flex flex-col items-center text-center">
                 <div className="relative group">
                     <Image
-                        src={getAvatarUrl(user?.avatar) || `https://ui-avatars.com/api/?name=${user?.user.name || 'User'}&background=random`}
+                        src={getAvatarUrl()}
                         alt="Profile Image"
                         width={100}
                         height={100}
-                        className="rounded-full border shadow-md"
+                        className="rounded-full border shadow-md object-cover"
                         loader={({ src }) => src}
                     />
+
+
                     <button
                         onClick={triggerFileInput}
                         className="absolute bottom-0 right-0 bg-primary rounded-full p-2 text-white dark:text-gray-600 dark: cursor-pointer hover:bg-primary/90 transition-all"

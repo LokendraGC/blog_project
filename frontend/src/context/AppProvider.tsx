@@ -138,7 +138,7 @@ export default function AppProvider({
             const response = await axios.post(
                 `${APP_URL}/api/auth/login`,
                 { email, password },
-                { withCredentials: true } 
+                { withCredentials: true }
             );
 
             if (response.data.status === 'success') {
@@ -156,7 +156,7 @@ export default function AppProvider({
             console.log('Unknown error', error);
             toast.error('Invalid Credentials');
 
-        } 
+        }
     };
 
 
@@ -330,7 +330,7 @@ export default function AppProvider({
 
     return (
         <AppContext.Provider value={{ tags, posts, updateProfile, user, login, logout, register, isLoading, authToken, changePassword }}>
-            {children}
+            {isLoading ? <Loader /> : children}
         </AppContext.Provider>
     );
 }

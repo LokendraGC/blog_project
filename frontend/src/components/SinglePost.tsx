@@ -20,6 +20,7 @@ interface ClientPostProps {
 const SinglePost = ({ post }: ClientPostProps) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const AVATAR_URL = `${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/`;
+    const POST_IMAGE_URL = `${process.env.NEXT_PUBLIC_POST_IMAGE_BASE_URL}`
     const [likedPostIds, setLikedPosts] = useState<Set<number>>(new Set());
     const [liked, setLiked] = useState(false);
     const [postLikeCounts, setPostLikeCounts] = useState<Record<number, number>>({});
@@ -173,10 +174,30 @@ const SinglePost = ({ post }: ClientPostProps) => {
         fetchComments();
     }, [post.id]);
 
+    const imageSrc = post.feature_image?.startsWith('http')
+        ? post.feature_image
+        : POST_IMAGE_URL + post.feature_image;
+
+
     return (
         <>
             {post ? (
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+                    <div>
+                        {post.feature_image && (
+                            <div>
+                                <Image
+                                    src={imageSrc}
+                                    alt={post.title}
+                                    width={800}
+                                    height={450}
+                                    className="w-full h-auto rounded-lg mb-6 object-cover"
+                                />
+                            </div>
+                        )}
+
+                    </div>
 
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
                         {post.title}

@@ -165,15 +165,6 @@ const Navbar: React.FC = () => {
         }
     }
 
-    if (!authToken) {
-        return (
-            <div className="fixed top-0 left-0 w-full h-1 z-50">
-                <div className="h-full bg-blue-600 animate-pulse transition-all duration-500 ease-in-out" />
-            </div>
-        );
-    }
-
-
 
     return (
         <nav className="flex justify-between items-center p-4 sticky top-0 z-100 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
