@@ -10,6 +10,8 @@ import { GET_COMMENT, GET_LIKED_POST, LIKE_POST } from '@/lib/ApiEndPoints';
 import { myAppHook } from '@/context/AppProvider';
 import toast from 'react-hot-toast';
 import CommentSection from './CommentSection';
+import { useParams } from 'next/navigation';
+
 
 interface ClientPostProps {
     post: PostData;
@@ -25,9 +27,15 @@ const SinglePost = ({ post }: ClientPostProps) => {
     const [liked, setLiked] = useState(false);
     const [postLikeCounts, setPostLikeCounts] = useState<Record<number, number>>({});
     const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
-    const { authToken } = myAppHook();
+    const { authToken, posts } = myAppHook();
     const [countComments, setCountComments] = useState<number | null>(null);
 
+    const params = useParams();
+    const slug = params.slug;
+
+    const currentPost = posts?.find((p) => p.slug === slug);
+
+    console.log(currentPost?.id);
 
     useEffect(() => {
         if (!contentRef.current) return;
@@ -184,20 +192,7 @@ const SinglePost = ({ post }: ClientPostProps) => {
             {post ? (
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-                    <div>
-                        {post.feature_image && (
-                            <div>
-                                <Image
-                                    src={imageSrc}
-                                    alt={post.title}
-                                    width={800}
-                                    height={450}
-                                    className="w-full h-auto rounded-lg mb-6 object-cover"
-                                />
-                            </div>
-                        )}
 
-                    </div>
 
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
                         {post.title}
@@ -258,6 +253,20 @@ const SinglePost = ({ post }: ClientPostProps) => {
                         </div>
                     </div>
 
+                    <div>
+                        {post.feature_image && (
+                            <div>
+                                <Image
+                                    src={imageSrc}
+                                    alt={post.title}
+                                    width={800}
+                                    height={450}
+                                    className="w-full h-auto rounded-lg mb-6 object-cover"
+                                />
+                            </div>
+                        )}
+
+                    </div>
 
                     <div
                         ref={contentRef}
@@ -286,7 +295,7 @@ const SinglePost = ({ post }: ClientPostProps) => {
                         {parse(post.content)}
                     </div>
 
-                    <CommentSection postID={post.id} />
+                    <CommentSection postID={currentPost?.id} />
 
                 </div>
             ) : (

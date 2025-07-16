@@ -15,7 +15,7 @@ interface CommentFormData {
 }
 
 interface CommentSectionProps {
-    postID: number;
+    postID: number | undefined;
 }
 
 const CommentSection = ({ postID }: CommentSectionProps) => {

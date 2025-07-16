@@ -6,6 +6,7 @@ export default interface PostData {
     short_description?: string;
     created_at: string;
     likes_count: number;
+    slug:string;
     user: {
         id: number;
         name: string;

@@ -287,7 +287,7 @@ export default function ClientPost({ posts }: ClientPostProps) {
 
             <div className="max-w-4xl mx-auto px-4 py-10">
                 {/* Top Navigation */}
-                <div className="sticky top-18 py-4 z-101 bg-white dark:bg-gray-900 shadow-sm">
+                <div className="sticky top-17 py-4 z-101 bg-white dark:bg-gray-900 shadow-sm">
                     {/* Left Arrow */}
                     <button
                         onClick={() => scrollNav('left')}
@@ -307,26 +307,38 @@ export default function ClientPost({ posts }: ClientPostProps) {
                         className="overflow-x-auto whitespace-nowrap scrollbar-hide scroll-smooth px-8"
                     >
                         <nav className="flex space-x-6 text-sm font-medium min-w-max">
-                            <button onClick={() => {
-                                setSelectedTagId(null);
-                                fetchPosts();
-                            }} className={`text-black  dark:text-white cursor-pointer ${selectedTagId === null ? 'border-b-2 border-black dark:border-white' : 'border-transparent'}`}>
+                            <button
+                                onClick={() => {
+                                    setSelectedTagId(null);
+                                    fetchPosts();
+                                }}
+                                className={`
+                                            px-4 py-1 rounded-full text-sm font-semibold border whitespace-nowrap
+                                            transition-colors duration-300
+                                            ${selectedTagId === null
+                                        ? 'bg-blue-600 text-white border-blue-600 cursor-pointer'
+                                        : 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700 cursor-pointer dark:hover:bg-gray-600'}
+                                      `}
+                            >
                                 For You
                             </button>
+
                             {tags?.map((tag) => (
                                 <button
                                     key={tag.id}
                                     onClick={() => fetchPostByTag(tag.id)}
-                                    className={`cursor-pointer
-      ${selectedTagId === tag.id ?
-                                            'border-b-2 border-black dark:border-white' :
-                                            'border-transparent'
+                                    className={`px-2 py-1 rounded-full text-sm font-medium border 
+            whitespace-nowrap transition-colors duration-300 cursor-pointer
+            ${selectedTagId === tag.id
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600'
                                         }
-    `}
+        `}
                                 >
                                     {tag.tag_name}
                                 </button>
                             ))}
+
 
 
                         </nav>
