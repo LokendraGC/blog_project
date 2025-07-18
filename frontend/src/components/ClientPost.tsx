@@ -10,11 +10,13 @@ import { use, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import slugify from 'slugify';
 import PostData from "@/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 
 const { convert } = require('html-to-text');
 
 interface ClientPostProps {
     posts: PostData[];
+    query?: string;
 }
 
 interface UserData {
@@ -26,7 +28,9 @@ interface UserData {
     created_at: string;
 }
 
-export default function ClientPost({ posts }: ClientPostProps) {
+export default function ClientPost({ posts, query }: ClientPostProps) {
+
+    console.log(query);
 
     const APP_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
     const { authToken, isLoading } = myAppHook();
@@ -280,7 +284,29 @@ export default function ClientPost({ posts }: ClientPostProps) {
         }
     }, [authToken])
 
-    // console.log(postLikeCounts);
+
+    // search posts
+    const searchTerm = query?.trim().toLowerCase();
+    const filteredPosts = searchTerm
+        ? allPosts.filter(post => post.title.toLowerCase().includes(searchTerm))
+        : allPosts;
+
+    // If a tag is selected, filter posts by that tag
+    const filteredByTagPosts = searchTerm
+        ? tagPosts.filter(post => post.title.toLowerCase().includes(searchTerm))
+        : tagPosts;
+
+    const getAvatarUrl = (avatarPath: string | null | undefined) => {
+        if (!avatarPath) return null;
+
+        // Handle base64 encoded avatars (from avatar generator)
+        if (avatarPath.startsWith('data:image')) {
+            return avatarPath;
+        }
+
+        // Handle uploaded avatars (stored in storage)
+        return `${process.env.NEXT_PUBLIC_API_URL}/storage/avatars/${avatarPath}`;
+    };
 
     return (
         <>
@@ -363,7 +389,7 @@ export default function ClientPost({ posts }: ClientPostProps) {
                 {/* Blog Post Card */}
                 {
 
-                    selectedTagId ? tagPosts.map((post) => {
+                    selectedTagId ? filteredByTagPosts.map((post) => {
                         const slug = slugify(post.title, { lower: true });
 
                         return (
@@ -467,7 +493,7 @@ export default function ClientPost({ posts }: ClientPostProps) {
                         )
                     }) :
 
-                        posts.map((post) => {
+                        filteredPosts.map((post) => {
 
                             const slug = slugify(post.title, { lower: true });
 
@@ -479,17 +505,31 @@ export default function ClientPost({ posts }: ClientPostProps) {
                                         {/* Author */}
                                         <div className="flex gap-3 items-center text-sm text-gray-500 dark:text-gray-400">
 
-                                            <Image
-                                                src={
-                                                    post.user?.avatar && typeof post.user.avatar === 'string' && post.user.avatar.length > 0
-                                                        ? AVATAR_URL + post.user.avatar
-                                                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user?.name || 'U')}&background=random`
-                                                }
-                                                width={25}
-                                                height={25}
-                                                className="rounded-full"
-                                                alt={post.user?.name || 'User'}
-                                            />
+                                            {
+                                                post.user.avatar ? (
+                                                    <Image
+                                                        src={getAvatarUrl(post.user.avatar) || `https://ui-avatars.com/api/?name=${post?.user.name || 'User'}&background=random`}
+                                                        alt="Profile Image"
+                                                        width={40}
+                                                        height={40}
+                                                        className="rounded-full border shadow-md"
+                                                        loader={({ src }) => src}
+                                                    />
+                                                ) : (
+                                                    <Avatar>
+                                                        <Image
+                                                            className="rounded-full border shadow-md"
+                                                            width={40}
+                                                            height={40}
+                                                            src={`https://ui-avatars.com/api/?name=${post?.user.name || 'User'}&background=random`}
+                                                            alt={post?.user.name || 'User'}
+                                                        />
+                                                        <AvatarFallback>
+                                                            {post?.user.name ? post?.user.name.charAt(0).toUpperCase() : 'U'}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                )
+                                            }
                                             {post.user.name}
 
                                             <div>
@@ -579,7 +619,11 @@ export default function ClientPost({ posts }: ClientPostProps) {
                     </div>
                 )}
 
-
+                {allPosts && filteredPosts.length === 0 && (
+                    <div className="flex justify-between items-start py-6 border-b dark:border-gray-700">
+                        <h3>Not found</h3>
+                    </div>
+                )}
 
 
 

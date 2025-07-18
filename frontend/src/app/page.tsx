@@ -12,14 +12,21 @@ async function fetchPosts() {
 }
 
 
-const Home = async () => {
-  
+const Home = async ({ searchParams }: {
+  searchParams?: {
+    query?: string;
+    page?: string;
+  }
+}) => {
+
+  const query = searchParams?.query || '';
+  console.log(query);
   const posts = await fetchPosts();
   // console.log(posts.data.data);
 
   return (
     <div>
-      <ClientPost posts={posts.data.data} />
+      <ClientPost posts={posts.data.data} query={query} />
     </div>
   )
 }

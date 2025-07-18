@@ -24,9 +24,9 @@ const Search = ({ placeholder }: { placeholder: string }) => {
     }
 
     useEffect(() => {
-        const currentQuery = searchParams.get("query") || "";
+        const currentQuery = searchParams.get('query') || '';
         setQuery(currentQuery);
-    }, [searchParams]);
+    }, [pathname, searchParams.toString()]);
 
     return (
 
