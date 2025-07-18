@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Input } from "./ui/input"
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { useDebouncedCallback } from 'use-debounce';
 
 const Search = ({ placeholder }: { placeholder: string }) => {
 
@@ -10,18 +11,17 @@ const Search = ({ placeholder }: { placeholder: string }) => {
     const { replace } = useRouter();
 
 
-    const handleSearch = (term: string) => {
-
-        const params = new URLSearchParams(searchParams);
+    const handleSearch = useDebouncedCallback((term: string) => {
+        const params = new URLSearchParams(searchParams.toString());
         if (term) {
             params.set('query', term);
         } else {
             params.delete('query');
         }
-
         replace(`${pathname}?${params.toString()}`);
+    }, 300);
 
-    }
+
 
     useEffect(() => {
         const currentQuery = searchParams.get('query') || '';

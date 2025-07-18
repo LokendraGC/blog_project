@@ -625,8 +625,6 @@ export default function ClientPost({ posts, query }: ClientPostProps) {
                     </div>
                 )}
 
-
-
             </div>
 
 
